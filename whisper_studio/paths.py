@@ -1,6 +1,8 @@
 import os
 import re
+import sys
 import tempfile
+from collections.abc import Mapping
 from pathlib import Path
 
 _ILLEGAL = re.compile(r'[<>:"/\\|?*\x00-\x1f\x7f]')
@@ -8,16 +10,46 @@ _RESERVED = re.compile(r"^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(\..*)?$", re.IGNOR
 FALLBACK_NAME = "sin-titulo"
 
 
+def is_frozen() -> bool:
+    return bool(getattr(sys, "frozen", False))
+
+
 def app_root() -> Path:
     return Path(__file__).resolve().parent.parent
 
 
-def data_dir() -> Path:
-    return app_root() / "data"
+def data_dir(frozen: bool | None = None, env: Mapping[str, str] | None = None) -> Path:
+    if frozen is None:
+        frozen = is_frozen()
+    if not frozen:
+        return app_root() / "data"
+    # The install dir under Program Files is read-only for normal users.
+    env = os.environ if env is None else env
+    base = env.get("LOCALAPPDATA")
+    root = Path(base) if base else Path.home() / "AppData" / "Local"
+    return root / "YouTubeWhisperStudio"
 
 
-def default_output_dir() -> Path:
-    return app_root() / "outputs"
+def default_output_dir(frozen: bool | None = None, env: Mapping[str, str] | None = None) -> Path:
+    if frozen is None:
+        frozen = is_frozen()
+    if not frozen:
+        return app_root() / "outputs"
+    env = os.environ if env is None else env
+    profile = env.get("USERPROFILE")
+    home = Path(profile) if profile else Path.home()
+    return home / "Videos" / "YouTube Whisper Studio"
+
+
+def bundled_bin_dir(frozen: bool | None = None) -> Path | None:
+    """Directory with tools shipped inside the frozen bundle (deno for yt-dlp)."""
+    if frozen is None:
+        frozen = is_frozen()
+    meipass = getattr(sys, "_MEIPASS", None)
+    if not frozen or not meipass:
+        return None
+    candidate = Path(meipass) / "bin"
+    return candidate if candidate.is_dir() else None
 
 
 def sanitize_filename(name: str, max_len: int = 80) -> str:

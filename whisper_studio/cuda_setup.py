@@ -29,9 +29,18 @@ def _site_packages_dirs() -> list[Path]:
     return found
 
 
+def _package_roots() -> list[Path]:
+    roots = _site_packages_dirs()
+    # PyInstaller unpacks packages under _MEIPASS instead of site-packages.
+    meipass = getattr(sys, "_MEIPASS", None)
+    if meipass and Path(meipass).is_dir():
+        roots.append(Path(meipass))
+    return roots
+
+
 def _candidate_dirs() -> list[Path]:
     dirs: list[Path] = []
-    for sp in _site_packages_dirs():
+    for sp in _package_roots():
         nvidia = sp / "nvidia"
         if nvidia.is_dir():
             dirs.extend(sorted(b for b in nvidia.glob("*/bin") if b.is_dir()))

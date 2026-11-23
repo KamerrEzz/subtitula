@@ -58,3 +58,49 @@ def test_app_dirs() -> None:
     assert paths.data_dir() == paths.app_root() / "data"
     assert paths.default_output_dir() == paths.app_root() / "outputs"
     assert (paths.app_root() / "pyproject.toml").exists()
+
+
+def test_dev_dirs_stay_inside_the_repo() -> None:
+    assert paths.data_dir(frozen=False) == paths.app_root() / "data"
+    assert paths.default_output_dir(frozen=False) == paths.app_root() / "outputs"
+
+
+def test_frozen_data_dir_uses_localappdata(tmp_path: Path) -> None:
+    env = {"LOCALAPPDATA": str(tmp_path / "Local")}
+    assert paths.data_dir(frozen=True, env=env) == tmp_path / "Local" / "YouTubeWhisperStudio"
+
+
+def test_frozen_data_dir_falls_back_to_home(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(paths.Path, "home", classmethod(lambda cls: tmp_path))
+    assert paths.data_dir(frozen=True, env={}) == tmp_path / "AppData" / "Local" / "YouTubeWhisperStudio"
+
+
+def test_frozen_output_dir_is_under_user_videos(tmp_path: Path) -> None:
+    env = {"USERPROFILE": str(tmp_path)}
+    out = paths.default_output_dir(frozen=True, env=env)
+    assert out == tmp_path / "Videos" / "YouTube Whisper Studio"
+    assert not out.exists()
+
+
+def test_frozen_output_dir_falls_back_to_home(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(paths.Path, "home", classmethod(lambda cls: tmp_path))
+    assert paths.default_output_dir(frozen=True, env={}) == tmp_path / "Videos" / "YouTube Whisper Studio"
+
+
+def test_is_frozen_reads_sys_flag(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delattr(paths.sys, "frozen", raising=False)
+    assert paths.is_frozen() is False
+    monkeypatch.setattr(paths.sys, "frozen", True, raising=False)
+    assert paths.is_frozen() is True
+
+
+def test_bundled_bin_dir_only_when_frozen(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    (tmp_path / "bin").mkdir()
+    monkeypatch.setattr(paths.sys, "_MEIPASS", str(tmp_path), raising=False)
+    assert paths.bundled_bin_dir(frozen=False) is None
+    assert paths.bundled_bin_dir(frozen=True) == tmp_path / "bin"
+
+
+def test_bundled_bin_dir_missing_returns_none(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(paths.sys, "_MEIPASS", str(tmp_path), raising=False)
+    assert paths.bundled_bin_dir(frozen=True) is None
