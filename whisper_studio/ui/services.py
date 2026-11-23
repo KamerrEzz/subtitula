@@ -125,6 +125,18 @@ def make_app_icon(size: int = 256) -> Image.Image:
     return icon
 
 
+def cancel_pending_callbacks(widget: Any) -> None:
+    # customtkinter and our own polling schedule `after` callbacks that would otherwise fire on
+    # already-destroyed widgets and print "invalid command name" errors while the app closes.
+    # Only the Tcl timer is cancelled: `after_cancel` would also delete the callback command,
+    # which belongs to the widget that scheduled it and breaks that widget's own destroy().
+    for after_id in widget.tk.splitlist(widget.tk.call("after", "info")):
+        try:
+            widget.tk.call("after", "cancel", after_id)
+        except Exception:
+            log.debug("Could not cancel pending callback %s", after_id, exc_info=True)
+
+
 def open_path(path: Path) -> None:
     os.startfile(str(path))  # type: ignore[attr-defined]  # Windows-only API
 

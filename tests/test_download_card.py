@@ -68,6 +68,25 @@ def test_pasting_the_same_link_again_retries_after_a_failed_probe(root: Any, mon
     assert card.title_label.cget("text") == "Video de prueba"
 
 
+def test_cancel_pending_callbacks_clears_every_scheduled_after(root: Any) -> None:
+    from whisper_studio.ui.services import cancel_pending_callbacks
+
+    root.after(60_000, lambda: None)
+    root.after_idle(lambda: None)
+    assert root.tk.call("after", "info")
+    cancel_pending_callbacks(root)
+    assert not root.tk.call("after", "info")
+
+
+def test_widgets_still_destroy_cleanly_after_cancelling_their_callbacks(root: Any) -> None:
+    from whisper_studio.ui.services import cancel_pending_callbacks
+
+    frame = ctk.CTkFrame(root)
+    frame.after(60_000, lambda: None)
+    cancel_pending_callbacks(root)
+    frame.destroy()
+
+
 def test_repasting_after_adding_shows_the_preview_again(root: Any, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(dc, "probe", lambda url: ProbeResult("video", "abc", "Video de prueba", 10.0, None, url))
     card = make_card(root)

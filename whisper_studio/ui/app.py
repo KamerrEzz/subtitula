@@ -47,6 +47,7 @@ from whisper_studio.ui.quick_settings import QuickSettingsCard
 from whisper_studio.ui.right_panels import JobsPanel, TranscriptPanel
 from whisper_studio.ui.services import (
     UiBridge,
+    cancel_pending_callbacks,
     detect_device,
     make_app_icon,
     open_path,
@@ -671,4 +672,5 @@ class App(ctk.CTk, TkinterDnD.DnDWrapper):
             self.cfg.window_geometry = self.geometry()
             self._save_config()
         finally:
+            cancel_pending_callbacks(self)
             self.destroy()
