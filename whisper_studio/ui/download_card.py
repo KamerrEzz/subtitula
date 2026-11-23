@@ -154,7 +154,7 @@ class DownloadCard(Card):
     def set_text(self, text: str) -> None:
         self.entry.delete(0, "end")
         self.entry.insert(0, text.strip().replace("\r", " ").replace("\n", " "))
-        self._schedule_probe()
+        self._schedule_probe(force=True)
 
     def _show_error(self, message: str) -> None:
         self.error_label.configure(text=message)
@@ -177,13 +177,15 @@ class DownloadCard(Card):
         self.preview.grid_remove()
         self._clear_error()
 
-    def _schedule_probe(self) -> None:
+    def _schedule_probe(self, force: bool = False) -> None:
+        # Skipping unchanged text avoids re-probing on every keystroke, but an explicit paste must
+        # always retry: the previous probe of the same link may have failed (e.g. no connection).
+        text = self.entry.get().strip()
+        if text == self._last_text and not force:
+            return
         if self._debounce_id is not None:
             self.after_cancel(self._debounce_id)
             self._debounce_id = None
-        text = self.entry.get().strip()
-        if text == self._last_text:
-            return
         self._last_text = text
         self._reset_preview()
         if text:
