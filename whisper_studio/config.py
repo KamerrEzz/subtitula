@@ -48,6 +48,7 @@ class AppConfig:
     keep_media: bool = False
     word_timestamps: bool = False
     vad_filter: bool = True
+    readable_subtitles: bool = True
     existing_policy: str = "skip"
     window_geometry: str | None = None
 
@@ -60,7 +61,7 @@ def _coerce(name: str, value: Any, default: Any) -> Any:
             return default
         chosen = [f for f in FORMATS if f in value]
         return chosen or default
-    if name in ("keep_media", "word_timestamps", "vad_filter", "model_user_set"):
+    if name in ("keep_media", "word_timestamps", "vad_filter", "model_user_set", "readable_subtitles"):
         return value if isinstance(value, bool) else default
     if name == "output_dir":
         return value if isinstance(value, str) and value.strip() else default

@@ -155,3 +155,40 @@ def test_export_all_subset_and_unknown(tmp_path: Path) -> None:
     out = exporters.export_all(result, META, tmp_path, ["srt", "pdf"])
     assert list(out) == ["srt"]
     assert not (tmp_path / "transcripcion.txt").exists()
+
+
+def _long_words_result() -> TranscriptResult:
+    words = [Word(i * 0.3, i * 0.3 + 0.3, " palabra" if i % 5 else " Hola,", 0.9) for i in range(30)]
+    text = "".join(w.word for w in words)
+    return make_result([Segment(0.0, 9.0, text, words)])
+
+
+def test_srt_readable_splits_long_segments_into_short_cues() -> None:
+    out = exporters.to_srt(_long_words_result(), readable=True)
+    blocks = out.strip().split("\n\n")
+    assert len(blocks) > 1
+    for block in blocks:
+        lines = block.split("\n")[2:]
+        assert 1 <= len(lines) <= 2
+        assert all(len(line) <= 42 for line in lines)
+
+
+def test_vtt_readable_splits_and_keeps_plain_format() -> None:
+    out = exporters.to_vtt(_long_words_result(), readable=True)
+    assert out.startswith("WEBVTT\n\n")
+    assert out.count(" --> ") > 1
+    assert "," not in re.findall(r"\d\d:\d\d:\d\d.\d{3} --> \S+", out)[0]
+
+
+def test_srt_default_keeps_one_cue_per_segment() -> None:
+    assert exporters.to_srt(_long_words_result()).count(" --> ") == 1
+
+
+def test_export_all_uses_readable_cues_only_when_asked(tmp_path: Path) -> None:
+    result = _long_words_result()
+    on = exporters.export_all(result, META, tmp_path / "on", ["srt", "vtt", "txt"], readable_subtitles=True)
+    off = exporters.export_all(result, META, tmp_path / "off", ["srt", "vtt", "txt"], readable_subtitles=False)
+    assert on["srt"].read_text(encoding="utf-8").count(" --> ") > 1
+    assert off["srt"].read_text(encoding="utf-8").count(" --> ") == 1
+    assert off["vtt"].read_text(encoding="utf-8").count(" --> ") == 1
+    assert on["txt"].read_text(encoding="utf-8") == off["txt"].read_text(encoding="utf-8")

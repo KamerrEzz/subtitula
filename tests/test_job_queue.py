@@ -21,7 +21,7 @@ from whisper_studio.job_queue import (
     QueueFinished,
     SegmentEvent,
 )
-from whisper_studio.models import Job, JobStatus, Segment, TranscriptResult
+from whisper_studio.models import Job, JobStatus, Segment, TranscriptResult, Word
 from whisper_studio.paths import job_output_dir
 from whisper_studio.transcriber import EngineInfo
 
@@ -30,6 +30,7 @@ class FakeEngine:
     def __init__(self, info: EngineInfo | None = None) -> None:
         self.info = info or EngineInfo("small", "cuda", "int8_float16")
         self.sources: list[str] = []
+        self.word_flags: list[bool] = []
         self.load_calls = 0
         self.behaviors: dict[str, Exception] = {}
         self.on_start: Callable[[str], None] | None = None
@@ -46,7 +47,10 @@ class FakeEngine:
             self.on_start(name)
         if name in self.behaviors:
             raise self.behaviors[name]
+        self.word_flags.append(word_timestamps)
         segments = [Segment(0.0, 1.0, "Hola."), Segment(1.0, 2.0, "Mundo.")]
+        if word_timestamps:
+            segments = [Segment(s.start, s.end, s.text, [Word(s.start, s.end, " " + s.text, 0.9)]) for s in segments]
         for seg in segments:
             on_segment(seg, seg.end / 2.0)
             if cancel_event.is_set():
@@ -431,3 +435,39 @@ def test_job_snapshots_are_copies(env) -> None:
     snap.status = JobStatus.ERROR
     assert q.jobs()[0].status == JobStatus.PENDING
     assert isinstance(snap, Job)
+
+
+def test_srt_selected_with_readable_subtitles_requests_words_even_if_switch_is_off(env) -> None:
+    q, engine, _, cfg, tmp_path = env
+    cfg.word_timestamps = False
+    cfg.readable_subtitles = True
+    cfg.formats = ["txt", "srt", "json"]
+    q.add_local(make_media(tmp_path, "a"))
+    run_to_end(q, cfg)
+    assert engine.word_flags == [True]
+    meta = json.loads((q.jobs()[0].output_dir / "metadata.json").read_text(encoding="utf-8"))
+    assert all("words" not in seg for seg in meta["segments"])
+
+
+def test_words_stay_in_json_when_the_switch_is_on(env) -> None:
+    q, engine, _, cfg, tmp_path = env
+    cfg.word_timestamps = True
+    cfg.formats = ["srt", "json"]
+    q.add_local(make_media(tmp_path, "a"))
+    run_to_end(q, cfg)
+    meta = json.loads((q.jobs()[0].output_dir / "metadata.json").read_text(encoding="utf-8"))
+    assert all("words" in seg for seg in meta["segments"])
+
+
+@pytest.mark.parametrize(
+    "readable,formats",
+    [(False, ["srt"]), (True, ["txt", "md", "json"])],
+)
+def test_words_not_requested_when_not_needed(env, readable: bool, formats: list[str]) -> None:
+    q, engine, _, cfg, tmp_path = env
+    cfg.word_timestamps = False
+    cfg.readable_subtitles = readable
+    cfg.formats = formats
+    q.add_local(make_media(tmp_path, "a"))
+    run_to_end(q, cfg)
+    assert engine.word_flags == [False]

@@ -117,18 +117,19 @@ class QuickSettingsCard(Card):
         icon_button(output, Glyph.FOLDER_OPEN, on_open_output, "Abrir carpeta de salida").grid(row=1, column=2, padx=(4, 0))
 
         self.keep_media = switch(body, "Conservar archivos multimedia", lambda: self._bool_changed("keep_media", self.keep_media))
+        self.readable = switch(body, "Subtítulos optimizados para lectura", lambda: self._bool_changed("readable_subtitles", self.readable))
         self.word_ts = switch(body, "Marcas de tiempo por palabra", lambda: self._bool_changed("word_timestamps", self.word_ts))
         self.vad = switch(body, "Filtro VAD (omite silencios)", lambda: self._bool_changed("vad_filter", self.vad))
-        for row, widget in enumerate((self.keep_media, self.word_ts, self.vad), start=4):
+        for row, widget in enumerate((self.keep_media, self.readable, self.word_ts, self.vad), start=4):
             widget.grid(row=row, column=0, columnspan=2, sticky="w", pady=(0, 6))
 
         ctk.CTkLabel(body, text="Si ya existe una transcripción", font=theme.font(11), text_color=theme.MUTED).grid(
-            row=7, column=0, columnspan=2, sticky="w", pady=(4, 0)
+            row=8, column=0, columnspan=2, sticky="w", pady=(4, 0)
         )
         self.policy = segmented(
             body, list(POLICY_LABELS.values()), lambda v: self._on_change("existing_policy", self._policy_by_label[v])
         )
-        self.policy.grid(row=8, column=0, columnspan=2, sticky="ew")
+        self.policy.grid(row=9, column=0, columnspan=2, sticky="ew")
 
     def _formats_changed(self) -> None:
         chosen = [f for f in FORMATS if self._format_boxes[f].get()]
@@ -147,7 +148,10 @@ class QuickSettingsCard(Card):
         self.policy.set(POLICY_LABELS[cfg.existing_policy])
         for fmt, box in self._format_boxes.items():
             box.select() if fmt in cfg.formats else box.deselect()
-        for widget, value in ((self.keep_media, cfg.keep_media), (self.word_ts, cfg.word_timestamps), (self.vad, cfg.vad_filter)):
+        for widget, value in (
+            (self.keep_media, cfg.keep_media), (self.readable, cfg.readable_subtitles),
+            (self.word_ts, cfg.word_timestamps), (self.vad, cfg.vad_filter),
+        ):
             widget.select() if value else widget.deselect()
         self.output_label.configure(text="  " + ellipsize(cfg.output_dir, 42))
         self._output_tooltip.set_text(cfg.output_dir)

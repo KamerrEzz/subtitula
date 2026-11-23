@@ -67,18 +67,19 @@ class SettingsDialog(_Dialog):
         self._row(body, 4, "Modo de descarga predeterminado", self.mode)
 
         self.keep_media = switch(body, "Conservar archivos multimedia", lambda: on_change("keep_media", bool(self.keep_media.get())))
+        self.readable = switch(body, "Subtítulos optimizados para lectura", lambda: on_change("readable_subtitles", bool(self.readable.get())))
         self.word_ts = switch(body, "Marcas de tiempo por palabra", lambda: on_change("word_timestamps", bool(self.word_ts.get())))
         self.vad = switch(body, "Filtro VAD (omite silencios)", lambda: on_change("vad_filter", bool(self.vad.get())))
-        for row, widget in enumerate((self.keep_media, self.word_ts, self.vad), start=5):
+        for row, widget in enumerate((self.keep_media, self.readable, self.word_ts, self.vad), start=5):
             widget.grid(row=row, column=0, columnspan=3, sticky="w", pady=(theme.PAD_SMALL, 0))
 
         folders = ctk.CTkFrame(body, fg_color="transparent")
-        folders.grid(row=8, column=0, columnspan=3, sticky="w", pady=(theme.PAD, 0))
+        folders.grid(row=9, column=0, columnspan=3, sticky="w", pady=(theme.PAD, 0))
         secondary_button(folders, "Abrir carpeta de logs", lambda: self._open(data_dir() / "logs")).pack(side="left", padx=(0, 8))
         secondary_button(folders, "Abrir carpeta de modelos", lambda: self._open(data_dir() / "models")).pack(side="left")
 
         ctk.CTkLabel(body, text=f"{APP_NAME} · versión {app_version}", font=theme.font(11), text_color=theme.MUTED).grid(
-            row=9, column=0, columnspan=3, sticky="w", pady=(theme.PAD, 0)
+            row=10, column=0, columnspan=3, sticky="w", pady=(theme.PAD, 0)
         )
         footer = ctk.CTkFrame(self, fg_color="transparent")
         footer.grid(row=1, column=0, sticky="e", padx=theme.PAD, pady=theme.PAD)
@@ -102,7 +103,10 @@ class SettingsDialog(_Dialog):
         self.policy.set(POLICY_LABELS[cfg.existing_policy])
         self.quality.set(QUALITY_LABELS[cfg.video_quality])
         self.mode.set(MODE_LABELS[cfg.download_mode])
-        for widget, value in ((self.keep_media, cfg.keep_media), (self.word_ts, cfg.word_timestamps), (self.vad, cfg.vad_filter)):
+        for widget, value in (
+            (self.keep_media, cfg.keep_media), (self.readable, cfg.readable_subtitles),
+            (self.word_ts, cfg.word_timestamps), (self.vad, cfg.vad_filter),
+        ):
             widget.select() if value else widget.deselect()
 
 

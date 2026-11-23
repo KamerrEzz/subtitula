@@ -5,7 +5,7 @@ import queue
 import shutil
 import threading
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable, Protocol
@@ -32,6 +32,10 @@ log = get_logger("queue")
 TEMP_DIR_NAME = ".tmp"
 METADATA_NAME = "metadata.json"
 _PROGRESS_EMIT_INTERVAL_S = 0.1
+
+
+def _without_words(result: TranscriptResult) -> TranscriptResult:
+    return replace(result, segments=[replace(s, words=None) for s in result.segments])
 
 
 class EngineProtocol(Protocol):
@@ -416,8 +420,13 @@ class JobQueue:
                 last_emit = now
                 self._publish(job)
 
+        # Readable cues are built from word timings, so they are requested whenever SRT/VTT need them;
+        # the user's switch then only decides whether words are kept in the JSON output (see _export).
+        needs_words = config.word_timestamps or (
+            config.readable_subtitles and bool({"srt", "vtt"} & set(config.formats))
+        )
         return self._engine.transcribe(
-            media_path, config.language, config.word_timestamps, config.vad_filter, on_segment, cancel
+            media_path, config.language, needs_words, config.vad_filter, on_segment, cancel
         )
 
     def _export(self, job: Job, config: AppConfig, result: TranscriptResult, out_dir: Path) -> None:
@@ -430,8 +439,9 @@ class JobQueue:
             device=result.device,
             created_at=datetime.now(),
         )
+        json_result = result if config.word_timestamps else _without_words(result)
         text_formats = [f for f in config.formats if f != "json"]
-        export_all(result, meta, out_dir, text_formats)
+        export_all(result, meta, out_dir, text_formats, config.readable_subtitles)
         extra = {
             "status": "completed",
             "source": job.source,
@@ -442,6 +452,6 @@ class JobQueue:
         # Written last so a crash can never leave a "completed" marker next to missing files.
         atomic_write_text(
             out_dir / METADATA_NAME,
-            to_json(result, meta, include_segments="json" in config.formats, extra=extra),
+            to_json(json_result, meta, include_segments="json" in config.formats, extra=extra),
         )
         job.transcript_text = to_txt(result)

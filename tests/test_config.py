@@ -69,3 +69,18 @@ def test_empty_formats_fall_back_to_default(tmp_path: Path) -> None:
 def test_default_model_for() -> None:
     assert default_model_for(True) == "medium"
     assert default_model_for(False) == "small"
+
+
+def test_readable_subtitles_defaults_to_true_and_tolerates_old_files(tmp_path: Path) -> None:
+    assert AppConfig().readable_subtitles is True
+    p = tmp_path / "settings.json"
+    p.write_text(json.dumps({"model": "tiny", "model_user_set": True}), encoding="utf-8")
+    assert load_config(p).readable_subtitles is True
+
+
+def test_readable_subtitles_roundtrip_and_invalid_value(tmp_path: Path) -> None:
+    p = tmp_path / "settings.json"
+    save_config(AppConfig(readable_subtitles=False), p)
+    assert load_config(p).readable_subtitles is False
+    p.write_text(json.dumps({"readable_subtitles": "no"}), encoding="utf-8")
+    assert load_config(p).readable_subtitles is True

@@ -6,6 +6,7 @@ from typing import Any, Callable
 
 from whisper_studio.models import Segment, TranscriptResult
 from whisper_studio.paths import atomic_write_text
+from whisper_studio.subtitles import build_cues
 
 PARAGRAPH_GAP_S = 2.0
 PARAGRAPH_SEGMENTS = 6
@@ -81,18 +82,24 @@ def to_txt(result: TranscriptResult) -> str:
     return "\n\n".join(" ".join(p) for p in paragraphs) + "\n"
 
 
-def to_srt(result: TranscriptResult) -> str:
+def _cues(result: TranscriptResult, readable: bool) -> list[tuple[float, float, str]]:
+    if readable:
+        return [(c.start, c.end, "\n".join(c.lines)) for c in build_cues(result.segments)]
+    return [(s.start, s.end, s.text.strip()) for s in _spoken(result)]
+
+
+def to_srt(result: TranscriptResult, *, readable: bool = False) -> str:
     blocks = [
-        f"{i}\n{format_srt_time(seg.start)} --> {format_srt_time(seg.end)}\n{seg.text.strip()}\n"
-        for i, seg in enumerate(_spoken(result), 1)
+        f"{i}\n{format_srt_time(start)} --> {format_srt_time(end)}\n{text}\n"
+        for i, (start, end, text) in enumerate(_cues(result, readable), 1)
     ]
     return "\n".join(blocks)
 
 
-def to_vtt(result: TranscriptResult) -> str:
+def to_vtt(result: TranscriptResult, *, readable: bool = False) -> str:
     blocks = [
-        f"{format_vtt_time(seg.start)} --> {format_vtt_time(seg.end)}\n{seg.text.strip()}\n"
-        for seg in _spoken(result)
+        f"{format_vtt_time(start)} --> {format_vtt_time(end)}\n{text}\n"
+        for start, end, text in _cues(result, readable)
     ]
     return "WEBVTT\n\n" + "\n".join(blocks)
 
@@ -156,12 +163,16 @@ def to_json(
 
 
 def export_all(
-    result: TranscriptResult, meta: ExportMeta, out_dir: Path, formats: list[str]
+    result: TranscriptResult,
+    meta: ExportMeta,
+    out_dir: Path,
+    formats: list[str],
+    readable_subtitles: bool = False,
 ) -> dict[str, Path]:
     renderers: dict[str, Callable[[], str]] = {
         "txt": lambda: to_txt(result),
-        "srt": lambda: to_srt(result),
-        "vtt": lambda: to_vtt(result),
+        "srt": lambda: to_srt(result, readable=readable_subtitles),
+        "vtt": lambda: to_vtt(result, readable=readable_subtitles),
         "md": lambda: to_markdown(result, meta),
         "json": lambda: to_json(result, meta),
     }
