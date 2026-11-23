@@ -72,6 +72,10 @@ locally with faster-whisper (CUDA when it really works, CPU otherwise). Spanish 
     probe "Me at the zoo"; real 0.1.0 -> 0.2.0 silent upgrade verified (old key/dir/shortcuts gone), data
     migrated, reinstall in place and silent uninstall (data kept) verified.
 
+- T10 release: v0.2.0 published with `Subtitula-Setup-0.2.0.exe` (sha256 37a722f2...b630), main pushed.
+  - Note: yt-dlp-ejs 0.8.0 failed one rotated YouTube player (b485e332) as a warning; current player solves fine.
+    Already latest yt-dlp; keep it updated in future releases.
+
 ## Not verified
 
 - Real mouse drag & drop (only registration), "Cancelar todo" / close-while-processing dialogs, amber fallback
