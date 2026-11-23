@@ -58,6 +58,20 @@ locally with faster-whisper (CUDA when it really works, CPU otherwise). Spanish 
 - [x] T7 GitHub repo `kamerrezz/whisper-studio` (public, user choice), push, tag v0.1.0, release with installer
   asset (inline, `gh`)
 
+## Rebrand + readable subtitles (requested 2026-11-23, v0.2.0)
+
+- [x] T8 Rebrand to "Subtitula" (user choice): app name, window, installer, shortcuts, data/output dirs with
+  migration from the old `YouTubeWhisperStudio` data dir, installer upgrade over 0.1.0, local videos as a
+  first-class source in UI copy (delegated writer)
+- [x] T9 Readable subtitles: SRT/VTT cues re-segmented with word timestamps (42 chars/line, 2 lines, 1-7 s,
+  min gap, natural break points), option on by default (delegated writer, TDD)
+- [ ] T10 Rebuild installer 0.2.0 (done, delegated) + GitHub release v0.2.0 (pending, inline)
+
+  - T8 evidence: RED (9 failed) then 201 passed; commit 02f496d. T9: RED (collection error; 6 failed) then 231
+    passed; commit 31f156d. T10 build: Subtitula-Setup-0.2.0.exe 551 MB; frozen self-test cuda/int8_float16,
+    probe "Me at the zoo"; real 0.1.0 -> 0.2.0 silent upgrade verified (old key/dir/shortcuts gone), data
+    migrated, reinstall in place and silent uninstall (data kept) verified.
+
 ## Not verified
 
 - Real mouse drag & drop (only registration), "Cancelar todo" / close-while-processing dialogs, amber fallback
