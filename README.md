@@ -7,6 +7,24 @@ envía tus archivos a ningún servicio externo.
 Flujo principal: **elegir tus videos o pegar un enlace de YouTube → añadir a la cola → iniciar → obtener
 la transcripción y los subtítulos**.
 
+## Capturas
+
+![Subtitula con varios trabajos completados, uno de YouTube y dos locales, y la transcripción del seleccionado](docs/screenshots/overview.png)
+
+*Cola de trabajos terminados con la transcripción del elemento seleccionado, usando la GPU.*
+
+![Transcripción en curso con barra de progreso y texto en vivo](docs/screenshots/transcribing.png)
+
+*Transcripción en curso: progreso real y texto en vivo mientras se procesa.*
+
+![Vista previa de un enlace de YouTube con miniatura, título y duración](docs/screenshots/youtube-preview.png)
+
+*Al pegar un enlace de YouTube se muestra la vista previa antes de añadirlo.*
+
+![Subtítulos SRT legibles generados por Subtitula](docs/screenshots/subtitles.png)
+
+*Subtítulos cómodos de leer: máximo 2 líneas por cue, con cortes en pausas naturales.*
+
 ## Qué hace
 
 - Descarga solo el audio de un video y lo transcribe (lo más rápido).
