@@ -19,7 +19,26 @@ Flujo principal: **pegar enlace → añadir a la cola → iniciar → obtener la
 - Exporta TXT, SRT, VTT, Markdown y JSON.
 - Usa la GPU NVIDIA cuando funciona de verdad; si no, avisa y continúa con la CPU.
 
-## Requisitos
+## Instalar (sin Python)
+
+Para usar la aplicación sin instalar Python ni uv:
+
+1. Descarga `YouTubeWhisperStudio-Setup-<versión>.exe` desde la sección **Releases** del repositorio en GitHub.
+2. Ejecútalo y sigue el asistente (pide permisos de administrador para instalar en `Archivos de programa`).
+3. Abre **YouTube Whisper Studio** desde el menú Inicio.
+
+Notas:
+
+- El instalador **no está firmado**, así que Windows SmartScreen mostrará un aviso. Pulsa
+  **Más información → Ejecutar de todas formas**.
+- **FFmpeg es recomendable** y no viene incluido: `winget install Gyan.FFmpeg`.
+- El controlador NVIDIA solo hace falta para usar la GPU; sin él funciona con la CPU.
+- Los modelos se descargan la primera vez que se usan en `%LOCALAPPDATA%\YouTubeWhisperStudio\models`.
+  Las preferencias y los registros están en esa misma carpeta, y los resultados se guardan por defecto en
+  `Videos\YouTube Whisper Studio`.
+- Al desinstalar se pregunta si también quieres borrar la configuración y los modelos descargados.
+
+## Requisitos (desde el código)
 
 | Componente | ¿Hace falta instalarlo aparte? |
 |------------|--------------------------------|
@@ -54,7 +73,7 @@ verás un aviso con el motivo y el trabajo continuará en CPU con el **mismo mod
 `int8`. Si eliges "GPU (CUDA)" en vez de "Automático", la aplicación no recurre a la CPU y muestra
 el error.
 
-## Instalación y uso
+## Instalación y uso (desde el código)
 
 ```powershell
 uv sync
@@ -124,3 +143,24 @@ uv run pytest
 El código está en `whisper_studio/`: descargas (`downloader.py`), motor de transcripción
 (`transcriber.py`), exportación (`exporters.py`), cola de trabajos (`job_queue.py`),
 configuración (`config.py`), diagnóstico (`diagnostics.py`) e interfaz (`ui/`).
+
+### Crear el instalador
+
+Requiere [NSIS 3](https://nsis.sourceforge.io/) (`winget install NSIS.NSIS`) y las dependencias de desarrollo
+(`uv sync`). Desde la raíz del repositorio:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File packaging/build.ps1
+```
+
+Ejecuta las pruebas, empaqueta con PyInstaller (`packaging/whisper_studio.spec`) y genera
+`dist/YouTubeWhisperStudio-Setup-<versión>.exe` con `packaging/installer.nsi`. La versión sale de
+`whisper_studio.__version__` y debe coincidir con `pyproject.toml`. El icono se regenera con
+`uv run python packaging/make_icon.py`. Con `-SkipTests` se omiten las pruebas.
+
+### Autodiagnóstico
+
+`YouTubeWhisperStudio.exe --self-test <audio.wav> <informe.json>` (o `python main.py --self-test ...`)
+no abre la ventana: carga el modelo `tiny`, transcribe el audio indicado, consulta un video de YouTube
+y escribe un informe JSON con el dispositivo usado y los errores. Termina con código 0 si todo funciona
+y 1 si algo falla. Sirve para comprobar una instalación.

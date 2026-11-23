@@ -44,6 +44,19 @@ locally with faster-whisper (CUDA when it really works, CPU otherwise). Spanish 
   - Found and fixed: a second CUDA encode after a library failure deadlocks inside ctranslate2; failure is now
     latched per process (OOM excluded). RED observed, then GREEN, real repro no longer hangs.
 
+- Commits: 0b74082 bootstrap, 178933a core, 63369c9 ui, c90b551 docs (identity: repo-local, user-provided).
+
+## Distribution (requested 2026-11-23)
+
+- [x] T5 Frozen-mode paths: per-user writable data dir and default outputs when running as an installed exe;
+  bundled deno/DLL discovery, `--self-test` diagnostic (delegated writer, with T6)
+  - Evidence: RED (9 failed / collection error) then `uv run pytest -q` 196 passed. Commit: 2e34160.
+- [x] T6 PyInstaller onedir build + NSIS 3.12 installer (`dist/YouTubeWhisperStudio-Setup-<version>.exe`),
+  frozen smoke: launch, CUDA tiny transcription, YouTube probe (delegated writer)
+  - Evidence: frozen `--self-test` -> cuda/int8_float16, probe "Me at the zoo"; installer 551 MB, onedir 1.2 GB
+    (cuBLAS 790 MB is incompressible); silent install/launch/uninstall verified, user data kept.
+- [ ] T7 GitHub repo `kamerrezz/whisper-studio`, push, tag, release with installer asset (inline, `gh`)
+
 ## Not verified
 
 - Real mouse drag & drop (only registration), "Cancelar todo" / close-while-processing dialogs, amber fallback
