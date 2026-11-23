@@ -55,13 +55,14 @@ locally with faster-whisper (CUDA when it really works, CPU otherwise). Spanish 
   frozen smoke: launch, CUDA tiny transcription, YouTube probe (delegated writer)
   - Evidence: frozen `--self-test` -> cuda/int8_float16, probe "Me at the zoo"; installer 551 MB, onedir 1.2 GB
     (cuBLAS 790 MB is incompressible); silent install/launch/uninstall verified, user data kept.
-- [ ] T7 GitHub repo `kamerrezz/whisper-studio`, push, tag, release with installer asset (inline, `gh`)
+- [x] T7 GitHub repo `kamerrezz/whisper-studio` (public, user choice), push, tag v0.1.0, release with installer
+  asset (inline, `gh`)
 
 ## Not verified
 
 - Real mouse drag & drop (only registration), "Cancelar todo" / close-while-processing dialogs, amber fallback
   badge in the UI, real playlist URL, real video-mode download with FFmpeg merge.
-- Commits: blocked, git user identity is not configured.
+- Installer GUI paths: uninstall "Yes, delete data" answer, desktop-shortcut checkbox, finish-page run box.
 
 ## Acceptance
 
