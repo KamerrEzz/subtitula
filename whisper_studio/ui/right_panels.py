@@ -45,7 +45,7 @@ class JobsPanel(Card):
         self.list_frame.grid(row=1, column=0, sticky="nsew")
         self.list_frame.grid_columnconfigure(0, weight=1)
         self.empty_label = ctk.CTkLabel(
-            self.list_frame, text="Aún no hay trabajos.\nPega un enlace de YouTube o arrastra archivos de audio y video.",
+            self.list_frame, text="Aún no hay trabajos.\nArrastra tus videos o pega un enlace de YouTube.",
             font=theme.font(13), text_color=theme.MUTED, justify="center",
         )
         self.empty_label.grid(row=0, column=0, pady=60)

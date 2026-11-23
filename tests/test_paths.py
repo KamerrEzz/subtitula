@@ -67,24 +67,24 @@ def test_dev_dirs_stay_inside_the_repo() -> None:
 
 def test_frozen_data_dir_uses_localappdata(tmp_path: Path) -> None:
     env = {"LOCALAPPDATA": str(tmp_path / "Local")}
-    assert paths.data_dir(frozen=True, env=env) == tmp_path / "Local" / "YouTubeWhisperStudio"
+    assert paths.data_dir(frozen=True, env=env) == tmp_path / "Local" / "Subtitula"
 
 
 def test_frozen_data_dir_falls_back_to_home(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.setattr(paths.Path, "home", classmethod(lambda cls: tmp_path))
-    assert paths.data_dir(frozen=True, env={}) == tmp_path / "AppData" / "Local" / "YouTubeWhisperStudio"
+    assert paths.data_dir(frozen=True, env={}) == tmp_path / "AppData" / "Local" / "Subtitula"
 
 
 def test_frozen_output_dir_is_under_user_videos(tmp_path: Path) -> None:
     env = {"USERPROFILE": str(tmp_path)}
     out = paths.default_output_dir(frozen=True, env=env)
-    assert out == tmp_path / "Videos" / "YouTube Whisper Studio"
+    assert out == tmp_path / "Videos" / "Subtitula"
     assert not out.exists()
 
 
 def test_frozen_output_dir_falls_back_to_home(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.setattr(paths.Path, "home", classmethod(lambda cls: tmp_path))
-    assert paths.default_output_dir(frozen=True, env={}) == tmp_path / "Videos" / "YouTube Whisper Studio"
+    assert paths.default_output_dir(frozen=True, env={}) == tmp_path / "Videos" / "Subtitula"
 
 
 def test_is_frozen_reads_sys_flag(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -113,3 +113,59 @@ def test_package_version_matches_pyproject() -> None:
 
     pyproject = tomllib.loads((paths.app_root() / "pyproject.toml").read_text(encoding="utf-8"))
     assert pyproject["project"]["version"] == __version__
+
+
+def _legacy_env(tmp_path: Path) -> dict[str, str]:
+    return {"LOCALAPPDATA": str(tmp_path / "Local")}
+
+
+def test_migration_moves_legacy_dir_with_its_content(tmp_path: Path) -> None:
+    legacy = tmp_path / "Local" / "YouTubeWhisperStudio"
+    (legacy / "models").mkdir(parents=True)
+    (legacy / "models" / "tiny.bin").write_bytes(b"model")
+    (legacy / "settings.json").write_text("{}", encoding="utf-8")
+
+    outcome = paths.migrate_legacy_data_dir(frozen=True, env=_legacy_env(tmp_path))
+
+    assert outcome == "migrated"
+    assert not legacy.exists()
+    assert (tmp_path / "Local" / "Subtitula" / "models" / "tiny.bin").read_bytes() == b"model"
+    assert (tmp_path / "Local" / "Subtitula" / "settings.json").exists()
+
+
+def test_migration_is_noop_when_new_dir_exists(tmp_path: Path) -> None:
+    legacy = tmp_path / "Local" / "YouTubeWhisperStudio"
+    legacy.mkdir(parents=True)
+    (legacy / "keep.txt").write_text("x", encoding="utf-8")
+    (tmp_path / "Local" / "Subtitula").mkdir()
+
+    assert paths.migrate_legacy_data_dir(frozen=True, env=_legacy_env(tmp_path)) == "not_needed"
+    assert (legacy / "keep.txt").exists()
+
+
+def test_migration_is_noop_without_legacy_dir(tmp_path: Path) -> None:
+    (tmp_path / "Local").mkdir()
+    assert paths.migrate_legacy_data_dir(frozen=True, env=_legacy_env(tmp_path)) == "not_needed"
+    assert not (tmp_path / "Local" / "Subtitula").exists()
+
+
+def test_migration_is_skipped_when_not_frozen(tmp_path: Path) -> None:
+    legacy = tmp_path / "Local" / "YouTubeWhisperStudio"
+    legacy.mkdir(parents=True)
+    assert paths.migrate_legacy_data_dir(frozen=False, env=_legacy_env(tmp_path)) == "not_needed"
+    assert legacy.exists()
+
+
+def test_migration_failure_never_deletes_old_data(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    legacy = tmp_path / "Local" / "YouTubeWhisperStudio"
+    legacy.mkdir(parents=True)
+    (legacy / "keep.txt").write_text("x", encoding="utf-8")
+
+    def locked(self: Path, target: Path) -> Path:
+        raise PermissionError("in use")
+
+    monkeypatch.setattr(paths.Path, "rename", locked)
+
+    assert paths.migrate_legacy_data_dir(frozen=True, env=_legacy_env(tmp_path)) == "failed"
+    assert (legacy / "keep.txt").exists()
+    assert not (tmp_path / "Local" / "Subtitula").exists()

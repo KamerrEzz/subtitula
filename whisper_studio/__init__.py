@@ -1,2 +1,2 @@
-APP_NAME = "YouTube Whisper Studio"
-__version__ = "0.1.0"
+APP_NAME = "Subtitula"
+__version__ = "0.2.0"

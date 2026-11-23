@@ -21,14 +21,14 @@ class LocalFilesCard(Card):
         master: ctk.CTkBaseClass,
         on_paths: Callable[[list[Path]], None],
     ) -> None:
-        super().__init__(master, "Archivos locales", Glyph.FILE)
+        super().__init__(master, "Tus videos", Glyph.FILE)
         self._on_paths = on_paths
         body = self.body
         body.grid_columnconfigure((0, 1), weight=1)
-        secondary_button(body, "Seleccionar archivos", self._pick_files).grid(row=0, column=0, sticky="ew", padx=(0, 4))
-        secondary_button(body, "Seleccionar carpeta", self._pick_folder).grid(row=0, column=1, sticky="ew", padx=(4, 0))
+        secondary_button(body, "Elegir videos", self._pick_files).grid(row=0, column=0, sticky="ew", padx=(0, 4))
+        secondary_button(body, "Elegir carpeta", self._pick_folder).grid(row=0, column=1, sticky="ew", padx=(4, 0))
         self.drop_zone = ctk.CTkLabel(
-            body, text="⬇   Arrastra archivos o carpetas aquí", font=theme.font(13),
+            body, text="⬇   Arrastra tus videos, audios o carpetas aquí", font=theme.font(13),
             text_color=theme.MUTED, height=64, corner_radius=theme.RADIUS_BUTTON, fg_color=theme.SURFACE_2,
         )
         self.drop_zone.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(theme.PAD_MID, 0))

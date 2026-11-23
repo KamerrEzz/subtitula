@@ -48,9 +48,9 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name="YouTubeWhisperStudio",
+    name="Subtitula",
     console=False,
     icon=str(ROOT / "packaging" / "app.ico"),
     upx=False,
 )
-coll = COLLECT(exe, a.binaries, a.datas, name="YouTubeWhisperStudio", upx=False)
+coll = COLLECT(exe, a.binaries, a.datas, name="Subtitula", upx=False)

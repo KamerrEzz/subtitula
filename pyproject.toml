@@ -1,7 +1,7 @@
 [project]
-name = "youtube-whisper-studio"
-version = "0.1.0"
-description = "Add your description here"
+name = "subtitula"
+version = "0.2.0"
+description = "Transcribe y subtitula videos locales y de YouTube en tu equipo con faster-whisper."
 requires-python = ">=3.12"
 dependencies = [
     "av>=12,<16",

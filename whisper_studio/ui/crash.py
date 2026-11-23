@@ -4,6 +4,7 @@ import tkinter as tk
 from tkinter import messagebox
 from types import TracebackType
 
+from whisper_studio import APP_NAME
 from whisper_studio.logging_setup import get_logger
 
 log = get_logger("crash")
@@ -23,7 +24,7 @@ def _show_dialog(exc: BaseException) -> None:
         if owns_root:
             root = tk.Tk()
             root.withdraw()
-        messagebox.showerror("YouTube Whisper Studio", _FRIENDLY.format(summary=summary[:400]), parent=root)
+        messagebox.showerror(APP_NAME, _FRIENDLY.format(summary=summary[:400]), parent=root)
         if owns_root:
             root.destroy()
     except Exception:

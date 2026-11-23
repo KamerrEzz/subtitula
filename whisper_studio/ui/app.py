@@ -160,7 +160,7 @@ class App(ctk.CTk, TkinterDnD.DnDWrapper):
         ctk.CTkLabel(header, image=logo, text="").grid(row=0, column=0, rowspan=2, padx=(0, theme.PAD_MID))
         ctk.CTkLabel(header, text=APP_NAME, font=theme.font(22, True), text_color=theme.TEXT).grid(row=0, column=1, sticky="sw")
         ctk.CTkLabel(
-            header, text="Descarga audio o video de YouTube y transcríbelo en tu equipo con Whisper.",
+            header, text="Transcribe y subtitula tus videos y YouTube, todo en tu equipo.",
             font=theme.font(11), text_color=theme.MUTED,
         ).grid(row=1, column=1, sticky="nw")
 
@@ -187,12 +187,12 @@ class App(ctk.CTk, TkinterDnD.DnDWrapper):
         left = ctk.CTkScrollableFrame(main, width=470, height=100, fg_color="transparent", scrollbar_button_color=theme.BORDER)
         left.grid(row=0, column=0, sticky="nsw", padx=(0, theme.PAD))
         left.grid_columnconfigure(0, weight=1)
+        self.local_card = LocalFilesCard(left, self.add_local_paths)
         self.download_card = DownloadCard(
             left, self.bridge, self._add_youtube, self.notify, lambda name, value: self.set_config(name, value)
         )
-        self.local_card = LocalFilesCard(left, self.add_local_paths)
         self.quick_card = QuickSettingsCard(left, self.set_config, self._pick_output_dir, self._open_output_dir)
-        for row, card in enumerate((self.download_card, self.local_card, self.quick_card)):
+        for row, card in enumerate((self.local_card, self.download_card, self.quick_card)):
             card.grid(row=row, column=0, sticky="ew", pady=(0, theme.PAD_MID))
 
         right = ctk.CTkFrame(main, fg_color="transparent")

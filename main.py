@@ -2,8 +2,9 @@ import ctypes
 import os
 import sys
 
+from whisper_studio import APP_NAME, __version__
 from whisper_studio.cuda_setup import register_nvidia_dll_dirs
-from whisper_studio.paths import bundled_bin_dir
+from whisper_studio.paths import bundled_bin_dir, migrate_legacy_data_dir
 
 # The DLL directories must be registered before anything imports faster_whisper or ctranslate2.
 register_nvidia_dll_dirs()
@@ -19,7 +20,7 @@ if _tool_dir:
 from whisper_studio.logging_setup import get_logger, setup_logging  # noqa: E402
 from whisper_studio.ui.crash import install_exception_hooks  # noqa: E402
 
-APP_USER_MODEL_ID = "YouTubeWhisperStudio.App"
+APP_USER_MODEL_ID = "Subtitula.App"
 
 
 def _prepare_streams() -> None:
@@ -38,7 +39,12 @@ def _set_taskbar_identity() -> None:
 
 def main() -> None:
     _prepare_streams()
+    migration = migrate_legacy_data_dir()
     setup_logging()
+    if migration == "migrated":
+        get_logger("main").info("Moved data from the previous YouTubeWhisperStudio folder")
+    elif migration == "failed":
+        get_logger("main").warning("Could not move the previous data folder; starting with an empty one", exc_info=True)
     from whisper_studio import self_test
 
     request = self_test.parse_args(sys.argv[1:])
@@ -46,7 +52,7 @@ def main() -> None:
         sys.exit(self_test.run_self_test(*request))
     install_exception_hooks()
     _set_taskbar_identity()
-    get_logger("main").info("Starting application")
+    get_logger("main").info("Starting %s %s", APP_NAME, __version__)
     from whisper_studio.ui.app import App
 
     App().mainloop()

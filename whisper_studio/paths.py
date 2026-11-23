@@ -8,6 +8,8 @@ from pathlib import Path
 _ILLEGAL = re.compile(r'[<>:"/\\|?*\x00-\x1f\x7f]')
 _RESERVED = re.compile(r"^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(\..*)?$", re.IGNORECASE)
 FALLBACK_NAME = "sin-titulo"
+DATA_DIR_NAME = "Subtitula"
+LEGACY_DATA_DIR_NAME = "YouTubeWhisperStudio"
 
 
 def is_frozen() -> bool:
@@ -27,7 +29,25 @@ def data_dir(frozen: bool | None = None, env: Mapping[str, str] | None = None) -
     env = os.environ if env is None else env
     base = env.get("LOCALAPPDATA")
     root = Path(base) if base else Path.home() / "AppData" / "Local"
-    return root / "YouTubeWhisperStudio"
+    return root / DATA_DIR_NAME
+
+
+def migrate_legacy_data_dir(frozen: bool | None = None, env: Mapping[str, str] | None = None) -> str:
+    """Moves the pre-rebrand data dir to its new name; returns "migrated", "not_needed" or "failed"."""
+    if frozen is None:
+        frozen = is_frozen()
+    if not frozen:
+        return "not_needed"
+    target = data_dir(frozen=True, env=env)
+    legacy = target.with_name(LEGACY_DATA_DIR_NAME)
+    if target.exists() or not legacy.is_dir():
+        return "not_needed"
+    try:
+        # A rename keeps the multi-GB models in place; on failure the old dir is left untouched.
+        legacy.rename(target)
+    except OSError:
+        return "failed"
+    return "migrated"
 
 
 def default_output_dir(frozen: bool | None = None, env: Mapping[str, str] | None = None) -> Path:
@@ -38,7 +58,7 @@ def default_output_dir(frozen: bool | None = None, env: Mapping[str, str] | None
     env = os.environ if env is None else env
     profile = env.get("USERPROFILE")
     home = Path(profile) if profile else Path.home()
-    return home / "Videos" / "YouTube Whisper Studio"
+    return home / "Videos" / "Subtitula"
 
 
 def bundled_bin_dir(frozen: bool | None = None) -> Path | None:

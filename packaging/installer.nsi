@@ -6,16 +6,17 @@ SetCompressor /SOLID lzma
   !error "Pass the version with /DVERSION=x.y.z"
 !endif
 !ifndef SOURCE_DIR
-  !define SOURCE_DIR "..\dist\YouTubeWhisperStudio"
+  !define SOURCE_DIR "..\dist\Subtitula"
 !endif
 !ifndef OUT_FILE
-  !define OUT_FILE "..\dist\YouTubeWhisperStudio-Setup-${VERSION}.exe"
+  !define OUT_FILE "..\dist\Subtitula-Setup-${VERSION}.exe"
 !endif
 
-!define APP_NAME "YouTube Whisper Studio"
-!define APP_EXE "YouTubeWhisperStudio.exe"
+!define APP_NAME "Subtitula"
+!define APP_EXE "Subtitula.exe"
 !define PUBLISHER "Kamerr Ezz"
-!define UNINSTALL_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\YouTubeWhisperStudio"
+!define UNINSTALL_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\Subtitula"
+!define OLD_UNINSTALL_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\YouTubeWhisperStudio"
 !define LICENSE_FILE "..\LICENSE"
 
 Name "${APP_NAME}"
@@ -63,6 +64,16 @@ LangString SecDesktopName ${LANG_SPANISH} "Acceso directo en el escritorio"
 
 Function .onInit
   SetRegView 64
+  ; 0.1.0 shipped as "YouTube Whisper Studio"; remove it so the user does not end up with two apps.
+  ReadRegStr $0 HKLM "${OLD_UNINSTALL_KEY}" "InstallLocation"
+  ${If} $0 != ""
+  ${AndIf} ${FileExists} "$0\Uninstall.exe"
+    ; _?= keeps the uninstaller in place so ExecWait really waits; /S makes it keep the user data.
+    ExecWait '"$0\Uninstall.exe" /S _?=$0'
+    Delete "$0\Uninstall.exe"
+    RMDir "$0"
+  ${EndIf}
+  DeleteRegKey HKLM "${OLD_UNINSTALL_KEY}"
 FunctionEnd
 
 Function un.onInit
@@ -113,8 +124,8 @@ Section "Uninstall"
   RMDir /r "$SMPROGRAMS\${APP_NAME}"
   DeleteRegKey HKLM "${UNINSTALL_KEY}"
 
-  MessageBox MB_YESNO|MB_ICONQUESTION|MB_DEFBUTTON2 "¿Eliminar también la configuración y los modelos descargados?" /SD IDNO IDNO keep_data
-  RMDir /r "$LOCALAPPDATA\YouTubeWhisperStudio"
+  MessageBox MB_YESNO|MB_ICONQUESTION|MB_DEFBUTTON2 "¿Eliminar también la configuración y los modelos descargados (%LOCALAPPDATA%\Subtitula)?" /SD IDNO IDNO keep_data
+  RMDir /r "$LOCALAPPDATA\Subtitula"
   keep_data:
 
   ; $INSTDIR may be a folder the user chose, so only our own files are removed before the final RMDir.

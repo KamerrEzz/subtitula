@@ -1,4 +1,4 @@
-# Builds dist/YouTubeWhisperStudio-Setup-<version>.exe. Run from anywhere: powershell -File packaging/build.ps1
+# Builds dist/Subtitula-Setup-<version>.exe. Run from anywhere: powershell -File packaging/build.ps1
 param([switch]$SkipTests)
 
 $ErrorActionPreference = "Stop"
@@ -28,5 +28,5 @@ Invoke-Step "NSIS installer" {
     & $makensis /V2 "/DVERSION=$version" packaging/installer.nsi
 }
 
-$installer = Join-Path $root "dist\YouTubeWhisperStudio-Setup-$version.exe"
+$installer = Join-Path $root "dist\Subtitula-Setup-$version.exe"
 Write-Host ("Installer: {0} ({1:N0} MB)" -f $installer, ((Get-Item $installer).Length / 1MB))

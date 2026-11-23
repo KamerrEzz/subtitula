@@ -1,10 +1,11 @@
-# YouTube Whisper Studio
+# Subtitula
 
-Aplicación de escritorio para Windows 11 que descarga videos de YouTube y los transcribe **localmente**
-con [faster-whisper](https://github.com/SYSTRAN/faster-whisper). No usa APIs de pago ni envía tus
-archivos a ningún servicio externo.
+Aplicación de escritorio para Windows 11 que transcribe y subtitula **tus videos** (y los de YouTube)
+**localmente** con [faster-whisper](https://github.com/SYSTRAN/faster-whisper). No usa APIs de pago ni
+envía tus archivos a ningún servicio externo.
 
-Flujo principal: **pegar enlace → añadir a la cola → iniciar → obtener la transcripción**.
+Flujo principal: **elegir tus videos o pegar un enlace de YouTube → añadir a la cola → iniciar → obtener
+la transcripción y los subtítulos**.
 
 ## Qué hace
 
@@ -17,15 +18,17 @@ Flujo principal: **pegar enlace → añadir a la cola → iniciar → obtener la
 - Procesa la cola en orden, sin bloquear la interfaz; si un trabajo falla, sigue con el siguiente.
 - Muestra el texto mientras se transcribe y permite copiarlo o abrirlo desde la propia aplicación.
 - Exporta TXT, SRT, VTT, Markdown y JSON.
+- Genera subtítulos cómodos de leer (máximo 2 líneas de 42 caracteres, entre 1 y 7 segundos, cortes en pausas
+  naturales). Se pueden desactivar con "Subtítulos optimizados para lectura".
 - Usa la GPU NVIDIA cuando funciona de verdad; si no, avisa y continúa con la CPU.
 
 ## Instalar (sin Python)
 
 Para usar la aplicación sin instalar Python ni uv:
 
-1. Descarga `YouTubeWhisperStudio-Setup-<versión>.exe` desde la sección **Releases** del repositorio en GitHub.
+1. Descarga `Subtitula-Setup-<versión>.exe` desde la sección **Releases** del repositorio en GitHub.
 2. Ejecútalo y sigue el asistente (pide permisos de administrador para instalar en `Archivos de programa`).
-3. Abre **YouTube Whisper Studio** desde el menú Inicio.
+3. Abre **Subtitula** desde el menú Inicio.
 
 Notas:
 
@@ -33,9 +36,11 @@ Notas:
   **Más información → Ejecutar de todas formas**.
 - **FFmpeg es recomendable** y no viene incluido: `winget install Gyan.FFmpeg`.
 - El controlador NVIDIA solo hace falta para usar la GPU; sin él funciona con la CPU.
-- Los modelos se descargan la primera vez que se usan en `%LOCALAPPDATA%\YouTubeWhisperStudio\models`.
+- Los modelos se descargan la primera vez que se usan en `%LOCALAPPDATA%\Subtitula\models`.
   Las preferencias y los registros están en esa misma carpeta, y los resultados se guardan por defecto en
-  `Videos\YouTube Whisper Studio`.
+  `Videos\Subtitula`.
+- Si venías de la versión 0.1.0 (YouTube Whisper Studio), el instalador la reemplaza y la aplicación mueve
+  tus modelos y preferencias a la nueva carpeta; tus resultados anteriores no se tocan.
 - Al desinstalar se pregunta si también quieres borrar la configuración y los modelos descargados.
 
 ## Requisitos (desde el código)
@@ -154,13 +159,13 @@ powershell -ExecutionPolicy Bypass -File packaging/build.ps1
 ```
 
 Ejecuta las pruebas, empaqueta con PyInstaller (`packaging/whisper_studio.spec`) y genera
-`dist/YouTubeWhisperStudio-Setup-<versión>.exe` con `packaging/installer.nsi`. La versión sale de
+`dist/Subtitula-Setup-<versión>.exe` con `packaging/installer.nsi`. La versión sale de
 `whisper_studio.__version__` y debe coincidir con `pyproject.toml`. El icono se regenera con
 `uv run python packaging/make_icon.py`. Con `-SkipTests` se omiten las pruebas.
 
 ### Autodiagnóstico
 
-`YouTubeWhisperStudio.exe --self-test <audio.wav> <informe.json>` (o `python main.py --self-test ...`)
+`Subtitula.exe --self-test <audio.wav> <informe.json>` (o `python main.py --self-test ...`)
 no abre la ventana: carga el modelo `tiny`, transcribe el audio indicado, consulta un video de YouTube
 y escribe un informe JSON con el dispositivo usado y los errores. Termina con código 0 si todo funciona
 y 1 si algo falla. Sirve para comprobar una instalación.
