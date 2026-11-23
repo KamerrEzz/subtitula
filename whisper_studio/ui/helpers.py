@@ -44,6 +44,29 @@ def ellipsize(text: str, limit: int) -> str:
     return text if len(text) <= limit else text[: limit - 1] + "…"
 
 
+_GEOMETRY = re.compile(r"^(\d+)x(\d+)(?:([+-])(-?\d+)([+-])(-?\d+))?$")
+
+
+def restore_geometry(
+    saved: str | None, screen_w: int, screen_h: int, default: str, min_size: tuple[int, int]
+) -> str:
+    # Only "+X+Y" offsets are restored; Tk's "-X" form anchors to the right/bottom edge and a
+    # position that is mostly off-screen is dropped so the window never opens out of reach.
+    match = _GEOMETRY.match(saved) if saved else None
+    if not match:
+        return default
+    width, height = int(match[1]), int(match[2])
+    if width < min_size[0] or height < min_size[1]:
+        return default
+    size = f"{width}x{height}"
+    if match[3] != "+" or match[5] != "+":
+        return size
+    x, y = int(match[4]), int(match[6])
+    if not (-width + 120 < x < screen_w - 120 and 0 <= y < screen_h - 120):
+        return size
+    return f"{size}+{x}+{y}"
+
+
 def status_color(status: JobStatus) -> str:
     return _STATUS_COLORS[status]
 

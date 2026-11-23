@@ -14,9 +14,32 @@ from whisper_studio.ui.helpers import (
     format_elapsed,
     parse_drop_paths,
     parse_urls,
+    restore_geometry,
     status_color,
     summarize_jobs,
 )
+
+DEFAULT = "1320x860"
+MIN = (1100, 720)
+
+
+@pytest.mark.parametrize(
+    ("saved", "expected"),
+    [
+        (None, DEFAULT),
+        ("", DEFAULT),
+        ("garbage", DEFAULT),
+        ("1400x900+100+50", "1400x900+100+50"),
+        # Windows reports a maximized window slightly above the screen origin.
+        ("1920x1057+149+-18", "1920x1057"),
+        ("1400x900+-30+40", "1400x900+-30+40"),
+        ("1400x900+5000+40", "1400x900"),
+        ("1400x900-10+40", "1400x900"),
+        ("800x600+10+10", DEFAULT),
+    ],
+)
+def test_restore_geometry(saved: str | None, expected: str) -> None:
+    assert restore_geometry(saved, 1920, 1080, DEFAULT, MIN) == expected
 
 
 def make_job(status: JobStatus, progress: float | None = None) -> Job:

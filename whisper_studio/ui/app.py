@@ -1,6 +1,5 @@
 import copy
 import queue
-import re
 import tempfile
 import threading
 import tkinter as tk
@@ -40,6 +39,7 @@ from whisper_studio.ui.helpers import (
     ellipsize,
     format_clock,
     parse_drop_paths,
+    restore_geometry,
     summarize_jobs,
 )
 from whisper_studio.ui.local_card import LocalFilesCard
@@ -61,7 +61,6 @@ MIN_SIZE = (1100, 720)
 POLL_MS = 100
 EVENTS_PER_TICK = 200
 SHUTDOWN_TIMEOUT_S = 10
-_GEOMETRY = re.compile(r"^(\d+)x(\d+)([+-]-?\d+)([+-]-?\d+)$")
 _DUPLICATE_SUFFIX = "ya está en la lista."
 
 
@@ -133,17 +132,13 @@ class App(ctk.CTk, TkinterDnD.DnDWrapper):
             log.warning("Could not set the window icon", exc_info=True)
 
     def _initial_geometry(self) -> str:
-        saved = self.cfg.window_geometry
-        match = _GEOMETRY.match(saved) if saved else None
-        if not match:
-            return DEFAULT_GEOMETRY
-        width, height, x, y = int(match[1]), int(match[2]), int(match[3]), int(match[4])
-        if width < MIN_SIZE[0] or height < MIN_SIZE[1]:
-            return DEFAULT_GEOMETRY
-        screen_w, screen_h = self.winfo_screenwidth(), self.winfo_screenheight()
-        if not (-width + 120 < x < screen_w - 120 and 0 <= y < screen_h - 120):
-            return f"{width}x{height}"
-        return saved
+        return restore_geometry(
+            self.cfg.window_geometry,
+            self.winfo_screenwidth(),
+            self.winfo_screenheight(),
+            DEFAULT_GEOMETRY,
+            MIN_SIZE,
+        )
 
     def report_callback_exception(self, exc: type[BaseException], val: BaseException, tb: Any) -> None:
         log.error("Unhandled error in a UI callback", exc_info=(exc, val, tb))
