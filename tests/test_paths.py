@@ -104,3 +104,12 @@ def test_bundled_bin_dir_only_when_frozen(monkeypatch: pytest.MonkeyPatch, tmp_p
 def test_bundled_bin_dir_missing_returns_none(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.setattr(paths.sys, "_MEIPASS", str(tmp_path), raising=False)
     assert paths.bundled_bin_dir(frozen=True) is None
+
+
+def test_package_version_matches_pyproject() -> None:
+    import tomllib
+
+    from whisper_studio import __version__
+
+    pyproject = tomllib.loads((paths.app_root() / "pyproject.toml").read_text(encoding="utf-8"))
+    assert pyproject["project"]["version"] == __version__
