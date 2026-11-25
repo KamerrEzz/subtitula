@@ -80,3 +80,9 @@ def test_probe_duration_missing_tool_and_failure(monkeypatch: pytest.MonkeyPatch
         media.subprocess, "run", lambda cmd, **kw: subprocess.CompletedProcess(cmd, 1, stdout="3", stderr="e")
     )
     assert media.probe_duration(tmp_path / "a.mp3") is None
+
+
+def test_folder_parts_start_at_the_added_folder(tmp_path: Path) -> None:
+    root = tmp_path / "cursos" / "git"
+    assert media.folder_parts(root / "M0S1-a.mp4", root) == ("git",)
+    assert media.folder_parts(root / "modulo1" / "b.mp4", root) == ("git", "modulo1")

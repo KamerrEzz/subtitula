@@ -86,9 +86,16 @@ def sanitize_filename(name: str, max_len: int = 80) -> str:
     return cleaned
 
 
-def job_output_dir(base: str | Path, title: str, ident: str, playlist: PlaylistSlot | None = None) -> Path:
+def job_output_dir(
+    base: str | Path,
+    title: str,
+    ident: str,
+    playlist: PlaylistSlot | None = None,
+    folder: tuple[str, ...] = (),
+) -> Path:
     if playlist is None:
-        return Path(base) / f"{sanitize_filename(title)}-[{ident}]"
+        parent = Path(base).joinpath(*(sanitize_filename(part) for part in folder))
+        return parent / f"{sanitize_filename(title)}-[{ident}]"
     number = str(playlist.index).zfill(max(2, len(str(playlist.total))))
     folder = Path(base) / f"{sanitize_filename(playlist.title)}-[{playlist.id}]"
     return folder / f"{number} - {sanitize_filename(title)}-[{ident}]"

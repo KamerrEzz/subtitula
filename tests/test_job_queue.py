@@ -351,6 +351,26 @@ def test_download_failure_cleans_temp_and_continues(env) -> None:
     assert jobs[1].status == JobStatus.COMPLETED
 
 
+def test_local_files_from_an_added_folder_are_grouped_under_it(env) -> None:
+    q, _, _, cfg, tmp = env
+    a, b = make_media(tmp, "M0S1-a"), make_media(tmp, "M0S2-b")
+    q.add_local(a, folder=("git",))
+    q.add_local(b, folder=("git",))
+    run_to_end(q, cfg)
+    group = Path(cfg.output_dir) / "git"
+    assert sorted(p.name.split("-[")[0] for p in group.iterdir()) == ["M0S1-a", "M0S2-b"]
+    assert q.jobs()[0].output_dir.parent == group
+
+
+def test_failed_local_file_leaves_no_empty_group_folders(env) -> None:
+    q, engine, _, cfg, tmp = env
+    engine.behaviors["bad"] = EngineError("Falló.", detail="x")
+    q.add_local(make_media(tmp, "bad"), folder=("git", "modulo1"))
+    run_to_end(q, cfg)
+    assert q.jobs()[0].status == JobStatus.ERROR
+    assert not (Path(cfg.output_dir) / "git").exists()
+
+
 def test_failed_playlist_video_leaves_no_empty_playlist_folder(env) -> None:
     q, _, dl, cfg, _ = env
     dl.errors["bad"] = DownloadFailed("El video es privado y no se puede descargar.", "d")

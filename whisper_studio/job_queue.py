@@ -176,7 +176,7 @@ class JobQueue:
         self._emit(JobAdded(snapshot))
         return snapshot
 
-    def add_local(self, path: Path) -> Job | None:
+    def add_local(self, path: Path, folder: tuple[str, ...] = ()) -> Job | None:
         path = Path(path)
         key = _local_key(path)
         with self._lock:
@@ -188,7 +188,7 @@ class JobQueue:
                 return None
             job = Job(
                 kind=JobKind.LOCAL, source=str(path), title=path.stem,
-                mode="audio_transcribe", stage_text="En cola",
+                mode="audio_transcribe", folder=folder, stage_text="En cola",
             )
             self._jobs.append(job)
             snapshot = copy.copy(job)
@@ -314,7 +314,8 @@ class JobQueue:
             return
         shutil.rmtree(out_dir / TEMP_DIR_NAME, ignore_errors=True)
         if job.status in (JobStatus.CANCELLED, JobStatus.ERROR) and self._created_out_dir:
-            for folder in (out_dir, out_dir.parent) if job.playlist else (out_dir,):
+            group_depth = 1 if job.playlist else len(job.folder)
+            for folder in (out_dir, *out_dir.parents[:group_depth]):
                 try:
                     folder.rmdir()
                 except OSError:
@@ -336,7 +337,7 @@ class JobQueue:
             if not local.is_file():
                 raise EngineError("No se encontró el archivo de audio o video.", detail=job.source)
             ident = media.file_fingerprint(local)
-        out_dir = job_output_dir(config.output_dir, job.title, ident, job.playlist)
+        out_dir = job_output_dir(config.output_dir, job.title, ident, job.playlist, job.folder)
         job.output_dir = out_dir
         self._created_out_dir = not out_dir.exists()
 

@@ -25,7 +25,7 @@ from whisper_studio.job_queue import (
     SegmentEvent,
 )
 from whisper_studio.logging_setup import get_logger
-from whisper_studio.media import discover_media, is_media_file
+from whisper_studio.media import discover_media, folder_parts, is_media_file
 from whisper_studio.models import FINISHED_STATUSES, Job, JobKind, JobStatus, PlaylistSlot
 from whisper_studio.transcriber import EngineInfo, WhisperEngine
 from whisper_studio.ui import theme
@@ -427,26 +427,26 @@ class App(ctk.CTk, TkinterDnD.DnDWrapper):
     def add_local_paths(self, paths: list[Path]) -> None:
         self.notify("Buscando archivos de audio y video…", "info")
 
-        def scan() -> tuple[list[Path], int]:
-            found: list[Path] = []
+        def scan() -> tuple[list[tuple[Path, tuple[str, ...]]], int]:
+            found: list[tuple[Path, tuple[str, ...]]] = []
             unsupported = 0
             for path in paths:
                 if path.is_dir():
-                    found.extend(discover_media(path))
+                    found.extend((file, folder_parts(file, path)) for file in discover_media(path))
                 elif path.is_file() and is_media_file(path):
-                    found.append(path)
+                    found.append((path, ()))
                 else:
                     unsupported += 1
             return found, unsupported
 
         self.bridge.run_async(scan, self._local_scanned)
 
-    def _local_scanned(self, result: tuple[list[Path], int] | None, error: BaseException | None) -> None:
+    def _local_scanned(self, result: tuple[list[tuple[Path, tuple[str, ...]]], int] | None, error: BaseException | None) -> None:
         if error is not None or result is None:
             self.notify("No se pudieron leer los archivos seleccionados.", "error")
             return
         found, unsupported = result
-        added = sum(1 for path in found if self.queue.add_local(path) is not None)
+        added = sum(1 for path, folder in found if self.queue.add_local(path, folder) is not None)
         duplicates = len(found) - added
         parts = [f"{added} añadido(s)"]
         if duplicates:

@@ -72,6 +72,7 @@ class Job:
     duration: float | None = None
     thumbnail_url: str | None = None
     playlist: PlaylistSlot | None = None
+    folder: tuple[str, ...] = ()
     id: str = field(default_factory=lambda: uuid.uuid4().hex)
     status: JobStatus = JobStatus.PENDING
     stage_text: str = ""

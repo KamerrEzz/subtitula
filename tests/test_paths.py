@@ -43,6 +43,11 @@ def test_job_output_dir_groups_playlist_videos_in_one_numbered_folder(tmp_path: 
     assert d == tmp_path / "Curso Sivod-[PL1]" / "03 - Mi video-[abc]"
 
 
+def test_job_output_dir_mirrors_the_added_folder_for_local_files(tmp_path: Path) -> None:
+    d = paths.job_output_dir(tmp_path, "M0S1-intro", "f1", folder=("git", "modulo:1"))
+    assert d == tmp_path / "git" / "modulo1" / "M0S1-intro-[f1]"
+
+
 def test_job_output_dir_pads_the_number_to_the_playlist_size(tmp_path: Path) -> None:
     slot = PlaylistSlot(id="PL1", title="Curso", index=7, total=120)
     assert paths.job_output_dir(tmp_path, "V", "x", slot).name == "007 - V-[x]"

@@ -22,6 +22,10 @@ def discover_media(folder: Path, recursive: bool = True) -> list[Path]:
     return sorted(p for p in iterator if p.is_file() and is_media_file(p))
 
 
+def folder_parts(file: Path, added_folder: Path) -> tuple[str, ...]:
+    return (added_folder.name, *file.parent.relative_to(added_folder).parts)
+
+
 def which_ffmpeg() -> str | None:
     return shutil.which("ffmpeg")
 
