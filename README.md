@@ -163,6 +163,9 @@ outputs/
   "Si ya existe una transcripción".
 - Si cancelas un trabajo, se borran solo sus archivos parciales; las transcripciones anteriores
   quedan intactas.
+- Si algún trabajo falla, "Reintentar fallidos" lo vuelve a poner en la cola, y "Abrir registro"
+  muestra el detalle de cada error.
+- Los nombres de carpeta se acortan cuando hace falta para no superar el límite de rutas de Windows.
 
 ## Configuración y registros
 
