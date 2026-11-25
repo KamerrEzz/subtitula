@@ -3,6 +3,7 @@ from pathlib import Path
 import pytest
 
 from whisper_studio import paths
+from whisper_studio.models import PlaylistSlot
 
 
 @pytest.mark.parametrize(
@@ -34,6 +35,17 @@ def test_sanitize_truncates_and_strips_trailing() -> None:
 def test_job_output_dir(tmp_path: Path) -> None:
     d = paths.job_output_dir(tmp_path, "Mi: video?", "abc123")
     assert d == tmp_path / "Mi video-[abc123]"
+
+
+def test_job_output_dir_groups_playlist_videos_in_one_numbered_folder(tmp_path: Path) -> None:
+    slot = PlaylistSlot(id="PL1", title="Curso: Sivod", index=3, total=12)
+    d = paths.job_output_dir(tmp_path, "Mi video", "abc", slot)
+    assert d == tmp_path / "Curso Sivod-[PL1]" / "03 - Mi video-[abc]"
+
+
+def test_job_output_dir_pads_the_number_to_the_playlist_size(tmp_path: Path) -> None:
+    slot = PlaylistSlot(id="PL1", title="Curso", index=7, total=120)
+    assert paths.job_output_dir(tmp_path, "V", "x", slot).name == "007 - V-[x]"
 
 
 def test_unique_path(tmp_path: Path) -> None:

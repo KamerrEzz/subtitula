@@ -5,6 +5,8 @@ import tempfile
 from collections.abc import Mapping
 from pathlib import Path
 
+from whisper_studio.models import PlaylistSlot
+
 _ILLEGAL = re.compile(r'[<>:"/\\|?*\x00-\x1f\x7f]')
 _RESERVED = re.compile(r"^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(\..*)?$", re.IGNORECASE)
 FALLBACK_NAME = "sin-titulo"
@@ -84,8 +86,12 @@ def sanitize_filename(name: str, max_len: int = 80) -> str:
     return cleaned
 
 
-def job_output_dir(base: str | Path, title: str, ident: str) -> Path:
-    return Path(base) / f"{sanitize_filename(title)}-[{ident}]"
+def job_output_dir(base: str | Path, title: str, ident: str, playlist: PlaylistSlot | None = None) -> Path:
+    if playlist is None:
+        return Path(base) / f"{sanitize_filename(title)}-[{ident}]"
+    number = str(playlist.index).zfill(max(2, len(str(playlist.total))))
+    folder = Path(base) / f"{sanitize_filename(playlist.title)}-[{playlist.id}]"
+    return folder / f"{number} - {sanitize_filename(title)}-[{ident}]"
 
 
 def unique_path(path: Path) -> Path:

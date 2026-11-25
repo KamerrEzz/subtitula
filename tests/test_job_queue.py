@@ -21,7 +21,7 @@ from whisper_studio.job_queue import (
     QueueFinished,
     SegmentEvent,
 )
-from whisper_studio.models import Job, JobStatus, Segment, TranscriptResult, Word
+from whisper_studio.models import Job, JobStatus, PlaylistSlot, Segment, TranscriptResult, Word
 from whisper_studio.paths import job_output_dir
 from whisper_studio.transcriber import EngineInfo
 
@@ -296,6 +296,17 @@ def test_youtube_audio_temp_deleted_when_not_kept(env) -> None:
     assert engine.sources == ["abc"]
 
 
+def test_playlist_videos_are_written_inside_the_playlist_folder(env) -> None:
+    q, _, _, cfg, _ = env
+    for index, vid in enumerate(("abc", "def"), start=1):
+        slot = PlaylistSlot(id="PL1", title="Curso", index=index, total=2)
+        q.add_youtube(f"https://www.youtube.com/watch?v={vid}", vid, f"Clase {index}", "audio_transcribe", playlist=slot)
+    run_to_end(q, cfg)
+    folder = Path(cfg.output_dir) / "Curso-[PL1]"
+    assert sorted(p.name for p in folder.iterdir()) == ["01 - Clase 1-[abc]", "02 - Clase 2-[def]"]
+    assert all((d / "transcripcion.txt").exists() for d in folder.iterdir())
+
+
 def test_youtube_audio_kept(env) -> None:
     q, _, dl, cfg, _ = env
     cfg.keep_media = True
@@ -338,6 +349,16 @@ def test_download_failure_cleans_temp_and_continues(env) -> None:
     assert jobs[0].error == "El video es privado y no se puede descargar."
     assert not job_output_dir(cfg.output_dir, "Malo", "bad").exists()
     assert jobs[1].status == JobStatus.COMPLETED
+
+
+def test_failed_playlist_video_leaves_no_empty_playlist_folder(env) -> None:
+    q, _, dl, cfg, _ = env
+    dl.errors["bad"] = DownloadFailed("El video es privado y no se puede descargar.", "d")
+    slot = PlaylistSlot(id="PL1", title="Curso", index=1, total=1)
+    q.add_youtube("https://www.youtube.com/watch?v=bad", "bad", "Malo", "audio_transcribe", playlist=slot)
+    run_to_end(q, cfg)
+    assert q.jobs()[0].status == JobStatus.ERROR
+    assert not (Path(cfg.output_dir) / "Curso-[PL1]").exists()
 
 
 def test_download_progress_is_forwarded(env) -> None:

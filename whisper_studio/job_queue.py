@@ -21,6 +21,7 @@ from whisper_studio.models import (
     Job,
     JobKind,
     JobStatus,
+    PlaylistSlot,
     Segment,
     TranscriptResult,
 )
@@ -158,6 +159,7 @@ class JobQueue:
         mode: str,
         duration: float | None = None,
         thumbnail_url: str | None = None,
+        playlist: PlaylistSlot | None = None,
     ) -> Job | None:
         with self._lock:
             if any(
@@ -167,7 +169,7 @@ class JobQueue:
                 return None
             job = Job(
                 kind=JobKind.YOUTUBE, source=url, title=title, mode=mode, video_id=video_id,
-                duration=duration, thumbnail_url=thumbnail_url, stage_text="En cola",
+                duration=duration, thumbnail_url=thumbnail_url, playlist=playlist, stage_text="En cola",
             )
             self._jobs.append(job)
             snapshot = copy.copy(job)
@@ -312,10 +314,11 @@ class JobQueue:
             return
         shutil.rmtree(out_dir / TEMP_DIR_NAME, ignore_errors=True)
         if job.status in (JobStatus.CANCELLED, JobStatus.ERROR) and self._created_out_dir:
-            try:
-                out_dir.rmdir()
-            except OSError:
-                pass
+            for folder in (out_dir, out_dir.parent) if job.playlist else (out_dir,):
+                try:
+                    folder.rmdir()
+                except OSError:
+                    break
 
     def _is_complete(self, out_dir: Path) -> bool:
         try:
@@ -333,7 +336,7 @@ class JobQueue:
             if not local.is_file():
                 raise EngineError("No se encontró el archivo de audio o video.", detail=job.source)
             ident = media.file_fingerprint(local)
-        out_dir = job_output_dir(config.output_dir, job.title, ident)
+        out_dir = job_output_dir(config.output_dir, job.title, ident, job.playlist)
         job.output_dir = out_dir
         self._created_out_dir = not out_dir.exists()
 

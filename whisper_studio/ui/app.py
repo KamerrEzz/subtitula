@@ -26,7 +26,7 @@ from whisper_studio.job_queue import (
 )
 from whisper_studio.logging_setup import get_logger
 from whisper_studio.media import discover_media, is_media_file
-from whisper_studio.models import FINISHED_STATUSES, Job, JobKind, JobStatus
+from whisper_studio.models import FINISHED_STATUSES, Job, JobKind, JobStatus, PlaylistSlot
 from whisper_studio.transcriber import EngineInfo, WhisperEngine
 from whisper_studio.ui import theme
 from whisper_studio import APP_NAME
@@ -418,8 +418,11 @@ class App(ctk.CTk, TkinterDnD.DnDWrapper):
 
     # adding jobs ---------------------------------------------------------------------------
 
-    def _add_youtube(self, url: str, video_id: str, title: str, mode: str, duration: float | None, thumb: str | None) -> bool:
-        return self.queue.add_youtube(url, video_id, title, mode, duration, thumb) is not None
+    def _add_youtube(
+        self, url: str, video_id: str, title: str, mode: str, duration: float | None, thumb: str | None,
+        playlist: PlaylistSlot | None,
+    ) -> bool:
+        return self.queue.add_youtube(url, video_id, title, mode, duration, thumb, playlist) is not None
 
     def add_local_paths(self, paths: list[Path]) -> None:
         self.notify("Buscando archivos de audio y video…", "info")

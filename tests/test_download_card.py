@@ -5,7 +5,8 @@ import pytest
 
 ctk = pytest.importorskip("customtkinter")
 
-from whisper_studio.downloader import ProbeResult  # noqa: E402
+from whisper_studio.downloader import ProbeEntry, ProbeResult  # noqa: E402
+from whisper_studio.models import PlaylistSlot  # noqa: E402
 from whisper_studio.errors import DownloadFailed  # noqa: E402
 from whisper_studio.ui import download_card as dc  # noqa: E402
 
@@ -100,3 +101,13 @@ def test_repasting_after_adding_shows_the_preview_again(root: Any, monkeypatch: 
     card.set_text(URL)
     pump(root)
     assert card.preview.winfo_ismapped()
+
+
+def test_playlist_videos_are_queued_with_their_position_in_the_list(root: Any) -> None:
+    added: list[PlaylistSlot | None] = []
+    card = dc.DownloadCard(root, SyncBridge(), lambda *a: added.append(a[-1]) or True, lambda m, l: None, lambda k, v: None)
+    card.apply_config("audio_transcribe", "best")
+    entries = [ProbeEntry("a", "Uno", "u1", None), ProbeEntry("b", "Dos", "u2", None)]
+    playlist = ProbeResult("playlist", "PL1", "Curso", None, None, "url", entries=entries)
+    assert card._enqueue(playlist, "url") == 2
+    assert added == [PlaylistSlot("PL1", "Curso", 1, 2), PlaylistSlot("PL1", "Curso", 2, 2)]

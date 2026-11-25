@@ -3,6 +3,7 @@ from typing import Callable
 import customtkinter as ctk
 
 from whisper_studio.downloader import ProbeResult, is_supported_url, probe
+from whisper_studio.models import PlaylistSlot
 from whisper_studio.errors import DownloadFailed
 from whisper_studio.logging_setup import get_logger
 from whisper_studio.ui import theme
@@ -23,7 +24,7 @@ QUALITY_LABELS = {"best": "Mejor", "1080": "1080p", "720": "720p", "480": "480p"
 _MODE_BY_LABEL = {label: mode for mode, label in MODE_LABELS.items()}
 _QUALITY_BY_LABEL = {label: q for q, label in QUALITY_LABELS.items()}
 
-AddYoutube = Callable[[str, str, str, str, float | None, str | None], bool]
+AddYoutube = Callable[[str, str, str, str, float | None, str | None, PlaylistSlot | None], bool]
 
 
 class DownloadCard(Card):
@@ -321,11 +322,17 @@ class DownloadCard(Card):
     def _enqueue(self, result: ProbeResult, url: str) -> int:
         mode = self.mode
         if result.kind == "playlist":
+            total = len(result.entries)
             return sum(
-                1 for e in result.entries if self._add_youtube(e.url, e.id, e.title, mode, e.duration, None)
+                1
+                for index, e in enumerate(result.entries, start=1)
+                if self._add_youtube(
+                    e.url, e.id, e.title, mode, e.duration, None,
+                    PlaylistSlot(result.id or "lista", result.title, index, total),
+                )
             )
         thumb = result.thumbnail
-        return int(self._add_youtube(result.webpage_url or url, result.id, result.title, mode, result.duration, thumb))
+        return int(self._add_youtube(result.webpage_url or url, result.id, result.title, mode, result.duration, thumb, None))
 
     def _finish_add(self, added: int, failures: list[str]) -> None:
         if added:

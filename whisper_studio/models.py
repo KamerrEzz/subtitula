@@ -54,6 +54,14 @@ class TranscriptResult:
     compute_type: str
 
 
+@dataclass(frozen=True)
+class PlaylistSlot:
+    id: str
+    title: str
+    index: int
+    total: int
+
+
 @dataclass
 class Job:
     kind: JobKind
@@ -63,6 +71,7 @@ class Job:
     video_id: str | None = None
     duration: float | None = None
     thumbnail_url: str | None = None
+    playlist: PlaylistSlot | None = None
     id: str = field(default_factory=lambda: uuid.uuid4().hex)
     status: JobStatus = JobStatus.PENDING
     stage_text: str = ""
