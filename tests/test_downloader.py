@@ -65,7 +65,7 @@ def test_download_only_downloads_video() -> None:
 def test_common_options() -> None:
     hook = lambda d: None  # noqa: E731
     o = downloader.build_ydl_options("audio_transcribe", "best", Path("out"), True, hook)
-    assert o["outtmpl"] == str(Path("out") / "%(title).80B [%(id)s].%(ext)s")
+    assert o["outtmpl"] == str(Path("out") / "%(title).60B [%(id)s].%(ext)s")
     assert o["windowsfilenames"] is True
     assert o["restrictfilenames"] is False
     assert o["noplaylist"] is True

@@ -208,7 +208,7 @@ def build_ydl_options(
 ) -> dict[str, Any]:
     options: dict[str, Any] = {
         "format": _format_selector(mode, quality, ffmpeg_available),
-        "outtmpl": str(Path(out_dir) / "%(title).80B [%(id)s].%(ext)s"),
+        "outtmpl": str(Path(out_dir) / "%(title).60B [%(id)s].%(ext)s"),
         "windowsfilenames": True,
         "restrictfilenames": False,
         "noplaylist": True,

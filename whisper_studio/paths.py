@@ -86,6 +86,14 @@ def sanitize_filename(name: str, max_len: int = 80) -> str:
     return cleaned
 
 
+# Windows tools (yt-dlp, ffmpeg) fail with "No such file or directory" past MAX_PATH (260), so the
+# job folder leaves room for the longest file written inside it: ".tmp\" plus a 60-byte media name
+# with its id, format and ".part" suffixes.
+MAX_OUTPUT_DIR_LEN = 150
+_GROUP_NAME_LEN = 60
+_MIN_TITLE_LEN = 20
+
+
 def job_output_dir(
     base: str | Path,
     title: str,
@@ -93,12 +101,35 @@ def job_output_dir(
     playlist: PlaylistSlot | None = None,
     folder: tuple[str, ...] = (),
 ) -> Path:
+    # Group folders are capped independently of the title so every job of a playlist or added
+    # folder lands in the same parent; only the per-job title is trimmed to fit the budget.
+    if playlist is None:
+        groups = [sanitize_filename(part, _GROUP_NAME_LEN) for part in folder]
+        prefix = ""
+    else:
+        groups = [f"{sanitize_filename(playlist.title, _GROUP_NAME_LEN)}-[{playlist.id}]"]
+        prefix = f"{str(playlist.index).zfill(max(2, len(str(playlist.total))))} - "
+    parent = Path(base).joinpath(*groups)
+    suffix = f"-[{ident}]"
+    room = MAX_OUTPUT_DIR_LEN - len(str(parent)) - 1 - len(prefix) - len(suffix)
+    name = sanitize_filename(title, max(_MIN_TITLE_LEN, min(80, room)))
+    return parent / f"{prefix}{name}{suffix}"
+
+
+def legacy_job_output_dir(
+    base: str | Path,
+    title: str,
+    ident: str,
+    playlist: PlaylistSlot | None = None,
+    folder: tuple[str, ...] = (),
+) -> Path:
+    """Folder used before the path budget, so jobs finished back then are still recognised."""
     if playlist is None:
         parent = Path(base).joinpath(*(sanitize_filename(part) for part in folder))
         return parent / f"{sanitize_filename(title)}-[{ident}]"
     number = str(playlist.index).zfill(max(2, len(str(playlist.total))))
-    folder = Path(base) / f"{sanitize_filename(playlist.title)}-[{playlist.id}]"
-    return folder / f"{number} - {sanitize_filename(title)}-[{ident}]"
+    group = Path(base) / f"{sanitize_filename(playlist.title)}-[{playlist.id}]"
+    return group / f"{number} - {sanitize_filename(title)}-[{ident}]"
 
 
 def unique_path(path: Path) -> Path:

@@ -186,3 +186,27 @@ def test_migration_failure_never_deletes_old_data(monkeypatch: pytest.MonkeyPatc
     assert paths.migrate_legacy_data_dir(frozen=True, env=_legacy_env(tmp_path)) == "failed"
     assert (legacy / "keep.txt").exists()
     assert not (tmp_path / "Local" / "Subtitula").exists()
+
+
+LONG_PLAYLIST = PlaylistSlot(id="PLV4N6aVC6wjc", title="Curso de OpenCode — Agentes de IA para Programar", index=31, total=40)
+LONG_TITLE = "M10S3 - MakeFile con IA comandos para todo el equipo | Opencode y mucho texto más largo todavía"
+BASE = "C:/Users/kamer/Videos/Subtitula"
+
+
+def test_job_output_dir_stays_within_the_path_budget() -> None:
+    d = paths.job_output_dir(BASE, LONG_TITLE, "_KoJ_fs0GhU", LONG_PLAYLIST)
+    assert len(str(d)) <= paths.MAX_OUTPUT_DIR_LEN
+    assert d.name.startswith("31 - M10S3") and d.name.endswith("-[_KoJ_fs0GhU]")
+
+
+def test_long_titles_never_change_the_shared_group_folder() -> None:
+    short = paths.job_output_dir(BASE, "Intro", "a", LONG_PLAYLIST)
+    long = paths.job_output_dir(BASE, LONG_TITLE, "b", LONG_PLAYLIST)
+    assert short.parent == long.parent
+    groups = ("x" * 70, "y" * 70)
+    assert paths.job_output_dir(BASE, LONG_TITLE, "c", folder=groups).parent == paths.job_output_dir(BASE, "v", "d", folder=groups).parent
+
+
+def test_a_typical_playlist_keeps_its_folder_name() -> None:
+    d = paths.job_output_dir(BASE, LONG_TITLE, "x", LONG_PLAYLIST)
+    assert d.parent.name == "Curso de OpenCode — Agentes de IA para Programar-[PLV4N6aVC6wjc]"
