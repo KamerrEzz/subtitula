@@ -144,6 +144,17 @@ outputs/
     02 - Instalación-[def456]/
 ```
 
+Al añadir una carpeta de archivos locales, los resultados se agrupan bajo una carpeta con su mismo
+nombre y se respetan sus subcarpetas. Los archivos añadidos sueltos tienen su propia carpeta:
+
+```text
+outputs/
+  git/
+    M0S1-introduccion-[a1b2c3d4]/
+    modulo2/
+      M2S1-ramas-[e5f6a7b8]/
+```
+
 - El audio descargado para transcribir se borra al terminar, salvo que actives
   "Conservar archivos multimedia". En "Video + transcripción" y "Solo descargar" el archivo
   descargado siempre se conserva.
