@@ -27,6 +27,7 @@ from whisper_studio.job_queue import (
 from whisper_studio.logging_setup import get_logger
 from whisper_studio.media import discover_media, folder_parts, is_media_file
 from whisper_studio.models import FINISHED_STATUSES, Job, JobKind, JobStatus, PlaylistSlot
+from whisper_studio.paths import data_dir
 from whisper_studio.transcriber import EngineInfo, WhisperEngine
 from whisper_studio.ui import theme
 from whisper_studio import APP_NAME
@@ -197,7 +198,8 @@ class App(ctk.CTk, TkinterDnD.DnDWrapper):
         right.grid_rowconfigure(0, weight=3)
         right.grid_rowconfigure(1, weight=2)
         self.jobs_panel = JobsPanel(
-            right, self._select_job, self._remove_job, self._open_job_folder, self._view_job, self._clear_finished
+            right, self._select_job, self._remove_job, self._open_job_folder, self._view_job, self._clear_finished,
+            self._retry_failed,
         )
         self.jobs_panel.grid(row=0, column=0, sticky="nsew", pady=(0, theme.PAD_MID))
         self.transcript_panel = TranscriptPanel(right, self._copy_transcript, self._open_displayed_folder, self._open_displayed_txt)
@@ -207,16 +209,18 @@ class App(ctk.CTk, TkinterDnD.DnDWrapper):
     def _build_footer(self) -> None:
         footer = ctk.CTkFrame(self, fg_color=theme.SURFACE, corner_radius=theme.RADIUS_CARD, border_width=1, border_color=theme.BORDER)
         footer.grid(row=2, column=0, sticky="ew", padx=theme.PAD * 1.5, pady=(theme.PAD_SMALL, theme.PAD))
-        footer.grid_columnconfigure(4, weight=1)
+        footer.grid_columnconfigure(5, weight=1)
         self.start_btn = primary_button(footer, "▶  Iniciar procesamiento", self.start_processing, width=210)
         self.cancel_btn = secondary_button(footer, "Cancelar actual", self.queue.cancel_current, width=130)
         self.cancel_all_btn = danger_button(footer, "Cancelar todo", self._confirm_cancel_all, width=120)
         self.results_btn = secondary_button(footer, "Abrir carpeta de resultados", self._open_output_dir, width=230)
-        for column, button in enumerate((self.start_btn, self.cancel_btn, self.cancel_all_btn, self.results_btn)):
+        self.log_btn = secondary_button(footer, "Abrir registro", self._open_log, width=130)
+        buttons = (self.start_btn, self.cancel_btn, self.cancel_all_btn, self.results_btn, self.log_btn)
+        for column, button in enumerate(buttons):
             button.grid(row=0, column=column, padx=(theme.PAD if column == 0 else theme.PAD_SMALL, 0), pady=theme.PAD_MID)
         self.start_btn.configure(font=theme.font(13, True))
         progress = ctk.CTkFrame(footer, fg_color="transparent")
-        progress.grid(row=0, column=4, sticky="ew", padx=theme.PAD)
+        progress.grid(row=0, column=5, sticky="ew", padx=theme.PAD)
         progress.grid_columnconfigure(0, weight=1)
         self.summary_label = ctk.CTkLabel(progress, text="", font=theme.font(12), text_color=theme.TEXT, anchor="e")
         self.summary_label.grid(row=0, column=0, sticky="e")
@@ -571,6 +575,21 @@ class App(ctk.CTk, TkinterDnD.DnDWrapper):
         if job_id == self._displayed_id:
             self._show_job(None)
         self._refresh_footer()
+
+    def _retry_failed(self) -> None:
+        retried = self.queue.retry_failed()
+        if not retried:
+            self.notify("No hay trabajos con error para reintentar.", "info")
+            return
+        self.notify(f"{retried} trabajo(s) vuelto(s) a la cola.", "info")
+        if self._running:
+            self.queue.start(self.cfg)
+        else:
+            self.start_processing()
+
+    def _open_log(self) -> None:
+        log_file = data_dir() / "logs" / "app.log"
+        self._open(log_file if log_file.exists() else log_file.parent)
 
     def _clear_finished(self) -> None:
         removed = self.queue.clear_finished()

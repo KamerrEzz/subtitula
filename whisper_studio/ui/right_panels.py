@@ -20,6 +20,7 @@ class JobsPanel(Card):
         on_open_folder: Callable[[str], None],
         on_view: Callable[[str], None],
         on_clear_finished: Callable[[], None],
+        on_retry_failed: Callable[[], None],
     ) -> None:
         super().__init__(master, None)
         self._rows: dict[str, JobRow] = {}
@@ -37,7 +38,8 @@ class JobsPanel(Card):
         ctk.CTkLabel(header, text="Trabajos", font=theme.font(15, True), text_color=theme.TEXT).grid(row=0, column=1, sticky="w")
         self.count_label = ctk.CTkLabel(header, text="", font=theme.font(11), text_color=theme.MUTED)
         self.count_label.grid(row=0, column=2, padx=(0, 12))
-        secondary_button(header, "Limpiar terminados", on_clear_finished, height=30, width=140).grid(row=0, column=3)
+        secondary_button(header, "Reintentar fallidos", on_retry_failed, height=30, width=140).grid(row=0, column=3, padx=(0, 8))
+        secondary_button(header, "Limpiar terminados", on_clear_finished, height=30, width=140).grid(row=0, column=4)
 
         self.list_frame = ctk.CTkScrollableFrame(
             self.body, fg_color="transparent", scrollbar_button_color=theme.BORDER, height=120
