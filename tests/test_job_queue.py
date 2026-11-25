@@ -381,6 +381,42 @@ def test_failed_playlist_video_leaves_no_empty_playlist_folder(env) -> None:
     assert not (Path(cfg.output_dir) / "Curso-[PL1]").exists()
 
 
+def test_jobs_finished_with_the_previous_folder_names_are_still_skipped(env) -> None:
+    q, engine, _, cfg, _ = env
+    cfg.existing_policy = "skip"
+    long_title = "M10S3 - MakeFile con IA comandos para todo el equipo y un título muy largo"
+    slot = PlaylistSlot(id="PL1", title="Curso de OpenCode — Agentes de IA para Programar", index=1, total=1)
+    old = Path(cfg.output_dir) / "Curso de OpenCode — Agentes de IA para Programar-[PL1]" / f"01 - {long_title}-[abc]"
+    old.mkdir(parents=True)
+    (old / "metadata.json").write_text(json.dumps({"status": "completed"}), encoding="utf-8")
+    q.add_youtube("https://www.youtube.com/watch?v=abc", "abc", long_title, "audio_transcribe", playlist=slot)
+    run_to_end(q, cfg)
+    job = q.jobs()[0]
+    assert job.status == JobStatus.SKIPPED and job.output_dir == old
+    assert engine.sources == []
+
+
+def test_retry_failed_requeues_only_failed_jobs_and_they_can_complete(env) -> None:
+    q, engine, _, cfg, tmp = env
+    engine.behaviors["a"] = EngineError("Falló.", detail="x")
+    q.add_local(make_media(tmp, "a"))
+    q.add_local(make_media(tmp, "b"))
+    run_to_end(q, cfg)
+    assert [j.status for j in q.jobs()] == [JobStatus.ERROR, JobStatus.COMPLETED]
+
+    del engine.behaviors["a"]
+    assert q.retry_failed() == 1
+    retried = q.jobs()[0]
+    assert retried.status == JobStatus.PENDING and retried.error == "" and retried.progress is None
+    run_to_end(q, cfg)
+    assert [j.status for j in q.jobs()] == [JobStatus.COMPLETED, JobStatus.COMPLETED]
+
+
+def test_retry_failed_without_failures_does_nothing(env) -> None:
+    q, _, _, _, _ = env
+    assert q.retry_failed() == 0
+
+
 def test_download_progress_is_forwarded(env) -> None:
     q, _, _, cfg, _ = env
     q.add_youtube("https://www.youtube.com/watch?v=abc", "abc", "V", "audio_transcribe")

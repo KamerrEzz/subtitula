@@ -25,7 +25,7 @@ from whisper_studio.models import (
     Segment,
     TranscriptResult,
 )
-from whisper_studio.paths import atomic_write_text, job_output_dir
+from whisper_studio.paths import atomic_write_text, job_output_dir, legacy_job_output_dir
 from whisper_studio.transcriber import EngineInfo
 
 log = get_logger("queue")
@@ -218,6 +218,26 @@ class JobQueue:
             self._jobs = keep
             return removed
 
+    def retry_failed(self) -> int:
+        retried: list[Job] = []
+        with self._lock:
+            for job in self._jobs:
+                if job.status == JobStatus.ERROR:
+                    job.status = JobStatus.PENDING
+                    job.stage_text = "En cola"
+                    job.error = ""
+                    job.progress = None
+                    job.progress_is_estimate = False
+                    job.speed_text = ""
+                    job.output_dir = None
+                    job.transcript_text = ""
+                    job.started_at = None
+                    job.finished_at = None
+                    retried.append(copy.copy(job))
+        for snapshot in retried:
+            self._emit(JobUpdated(snapshot))
+        return len(retried)
+
     def start(self, config: AppConfig) -> bool:
         """Start the worker, or hand a fresh config to the running one. Returns True if a thread was started."""
         with self._lock:
@@ -341,9 +361,13 @@ class JobQueue:
         job.output_dir = out_dir
         self._created_out_dir = not out_dir.exists()
 
-        if needs_transcription and config.existing_policy == "skip" and self._is_complete(out_dir):
-            self._set(job, JobStatus.SKIPPED, "Ya existe una transcripción", progress=1.0)
-            return
+        if needs_transcription and config.existing_policy == "skip":
+            legacy = legacy_job_output_dir(config.output_dir, job.title, ident, job.playlist, job.folder)
+            for candidate in dict.fromkeys((out_dir, legacy)):
+                if self._is_complete(candidate):
+                    job.output_dir = candidate
+                    self._set(job, JobStatus.SKIPPED, "Ya existe una transcripción", progress=1.0)
+                    return
 
         if job.kind == JobKind.YOUTUBE:
             media_path = self._download(job, config, cancel, out_dir)
