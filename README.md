@@ -134,6 +134,16 @@ outputs/
     metadata.json
 ```
 
+Los videos de una lista de reproducción se agrupan en una sola carpeta con el nombre de la lista,
+numerados en el orden de la lista:
+
+```text
+outputs/
+  Mi curso-[PLxxxxxxxx]/
+    01 - Introducción-[abc123]/
+    02 - Instalación-[def456]/
+```
+
 - El audio descargado para transcribir se borra al terminar, salvo que actives
   "Conservar archivos multimedia". En "Video + transcripción" y "Solo descargar" el archivo
   descargado siempre se conserva.
